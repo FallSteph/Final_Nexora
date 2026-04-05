@@ -5,7 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { addEventToGoogleCalendar, updateGoogleCalendarEvent, deleteGoogleCalendarEvent } from "@/types/google";
+import { addEventToGoogleCalendar, updateGoogleCalendarEvent, deleteGoogleCalendarEvent, ensureAuthorized } from "@/types/google";
 import { uploadAttachmentToGoogleDrive, getGoogleAccessToken } from "@/types/googleDriveUploader";
 import { ChevronDown } from 'lucide-react';
 import {
