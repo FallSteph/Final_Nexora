@@ -162,9 +162,13 @@ const Notifications = () => {
 
     case "board_added":
     case "board_created":
+    case "board_removed":
+    case "board_updated":
+    case "board_deadline":
       return <LayoutDashboard className="w-4 h-4" />;
 
     case "card_assigned":
+    case "card_removed":
     case "card_moved":
     case "card_created":
     case "card_updated":

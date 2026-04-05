@@ -12,7 +12,7 @@ const notificationSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['welcome', 'board_added', 'card_assigned', 'card_comment', 'new_signup', 'board_created'],
+    enum: ['welcome', 'board_added', 'board_removed', 'board_updated', 'board_deadline', 'card_assigned', 'card_removed', 'card_comment', 'new_signup', 'board_created'],
     required: true,
   },
   read: {

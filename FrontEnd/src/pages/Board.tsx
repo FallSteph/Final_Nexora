@@ -8,8 +8,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { addEventToGoogleCalendar, updateGoogleCalendarEvent, deleteGoogleCalendarEvent } from "@/types/google";
 import { uploadAttachmentToGoogleDrive, getGoogleAccessToken } from "@/types/googleDriveUploader";
 import { ChevronDown } from 'lucide-react';
-import { 
-  ArrowLeft, Share2, Plus, MoreVertical, Pencil, Trash2, 
+import {
+  ArrowLeft, Share2, Plus, MoreVertical, Pencil, Trash2,
   MessageCircle, Paperclip, Upload, X, User, Search,
   Settings, Filter, Users, Download, Eye, FileText, Menu,
   Calendar, Tag, CheckCircle, Clock, Palette, Move, CalendarIcon, ExternalLink,
@@ -55,17 +55,17 @@ type UserRole = 'admin' | 'pm' | 'instructor' | 'member';
 const canEditBoard = (userRole: UserRole | undefined, userEmail: string | undefined, boardUserEmail: string | undefined, boardMembers: { email: string; role?: 'member' | 'manager' | 'instructor' }[]): boolean => {
   // Admin can always edit
   if (userRole === 'admin') return true;
-  
+
   // Instructor can edit
   if (userRole === 'instructor') return true;
-  
+
   // PM (board creator) can edit
   if (userEmail && boardUserEmail && userEmail === boardUserEmail) return true;
-  
+
   // Manager role in board members can edit
   const memberRecord = boardMembers.find(m => m.email === userEmail);
   if (memberRecord?.role === 'manager') return true;
-  
+
   return false;
 };
 
@@ -73,13 +73,13 @@ const canEditBoard = (userRole: UserRole | undefined, userEmail: string | undefi
 const canChangeRoles = (userRole: UserRole | undefined, userEmail: string | undefined, boardUserEmail: string | undefined): boolean => {
   // Admin can always change roles
   if (userRole === 'admin') return true;
-  
+
   // Instructor can change roles
   if (userRole === 'instructor') return true;
-  
+
   // PM (board creator) can change roles
   if (userEmail && boardUserEmail && userEmail === boardUserEmail) return true;
-  
+
   return false;
 };
 
@@ -137,11 +137,11 @@ const Board = () => {
 
   // API URL from environment
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-  
+
   // Notification Service - Sends notifications to backend
   const sendNotification = async (
     recipientEmail: string,
-    type: 'board_added' | 'card_assigned' | 'card_comment' | 'board_deadline' | 'board_updated',
+    type: 'board_added' | 'board_removed' | 'card_assigned' | 'card_removed' | 'card_comment' | 'board_deadline' | 'board_updated',
     data: {
       boardTitle?: string;
       boardId?: string;
@@ -156,7 +156,7 @@ const Board = () => {
     try {
       const token = localStorage.getItem('token');
       const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
-      const senderName = currentUser.firstName && currentUser.lastName 
+      const senderName = currentUser.firstName && currentUser.lastName
         ? `${currentUser.firstName} ${currentUser.lastName}`
         : currentUser.email || 'System';
 
@@ -165,8 +165,12 @@ const Board = () => {
       if (!notificationMessage) {
         if (type === 'board_added') {
           notificationMessage = `You have been added to the board "${data.boardTitle}" by ${senderName}.`;
+        } else if (type === 'board_removed') {
+          notificationMessage = `You have been removed from the board "${data.boardTitle}" by ${senderName}.`;
         } else if (type === 'card_assigned') {
           notificationMessage = `You have been assigned to the card "${data.cardTitle}" in board "${data.boardTitle}" by ${senderName}.`;
+        } else if (type === 'card_removed') {
+          notificationMessage = `You have been removed from the card "${data.cardTitle}" in board "${data.boardTitle}" by ${senderName}.`;
         } else if (type === 'card_comment') {
           notificationMessage = `${senderName} commented on "${data.cardTitle}": "${data.commentText}"`;
         } else if (type === 'board_deadline') {
@@ -212,20 +216,20 @@ const Board = () => {
     try {
       const token = localStorage.getItem('token');
       const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
-      
+
       await axios.post(
         `${API_URL}/api/boards/${boardId}/activity`,
         {
           action,
           details,
           performedBy: currentUser.email || 'unknown',
-          performedByName: currentUser.firstName && currentUser.lastName 
+          performedByName: currentUser.firstName && currentUser.lastName
             ? `${currentUser.firstName} ${currentUser.lastName}`
             : currentUser.email || 'System'
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      
+
       console.log(`✅ Activity logged: ${action}`);
     } catch (error) {
       console.error('Failed to log activity:', error);
@@ -540,17 +544,17 @@ const Board = () => {
     board?: BoardType;
   }
 
- interface Attachment {
-  id: string;
-  name: string;
-  size: string;
-  type: string;
-  url: string;  // Make it required
-  drive?: boolean;
-  driveId?: string;  // Add missing properties
-  uploadedBy?: string;
-  uploadedAt?: string;
-}
+  interface Attachment {
+    id: string;
+    name: string;
+    size: string;
+    type: string;
+    url: string;  // Make it required
+    drive?: boolean;
+    driveId?: string;  // Add missing properties
+    uploadedBy?: string;
+    uploadedAt?: string;
+  }
 
   interface ModalComment {
     id: string;
@@ -588,11 +592,11 @@ const Board = () => {
   }
 
   // FIXED: Theme Selector Component
-  const ThemeSelector = ({ 
-    currentTheme, 
-    onThemeChange 
-  }: { 
-    currentTheme: ThemeOption; 
+  const ThemeSelector = ({
+    currentTheme,
+    onThemeChange
+  }: {
+    currentTheme: ThemeOption;
     onThemeChange: (theme: ThemeOption) => void;
   }) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -623,9 +627,8 @@ const Board = () => {
             <DropdownMenuItem
               key={theme.value}
               onClick={() => onThemeChange(theme.value)}
-              className={`flex items-center gap-2 py-1.5 cursor-pointer ${
-                currentTheme === theme.value ? 'bg-white/10' : ''
-              }`}
+              className={`flex items-center gap-2 py-1.5 cursor-pointer ${currentTheme === theme.value ? 'bg-white/10' : ''
+                }`}
             >
               <div className={`w-5 h-5 rounded-full ${theme.color}`} />
               <span className="text-sm">{theme.label}</span>
@@ -640,21 +643,21 @@ const Board = () => {
   };
 
   const handleSaveCardWithAttachments = async (
-    cardId: string, 
-    listId: string, 
+    cardId: string,
+    listId: string,
     updates: Partial<CardType>
   ) => {
     if (!boardId || !board) return;
-    
+
     try {
       await updateCard(boardId, listId, cardId, updates);
-      
+
       // Sync to Google Calendar if needed
       const { title, description, dueDate, assignedMembers, googleEventId } = updates;
-      
+
       if (dueDate && assignedMembers && assignedMembers.length > 0) {
         const parsedDate = new Date(dueDate as any);
-        
+
         if (googleEventId) {
           await updateGoogleCalendarEvent(
             googleEventId,
@@ -667,13 +670,13 @@ const Board = () => {
             dueDate: parsedDate,
             assignedMembers,
           });
-          
+
           if (newEventId) {
             await updateCard(boardId, listId, cardId, { googleEventId: newEventId });
           }
         }
       }
-      
+
       toast.success("Card updated successfully");
     } catch (err) {
       console.error("❌ Failed to update card:", err);
@@ -682,11 +685,11 @@ const Board = () => {
   };
 
   // NEW: Attachment Thumbnail Viewer Component
-  const AttachmentThumbnailViewer = ({ 
-    attachment, 
-    onClose 
-  }: { 
-    attachment: Attachment; 
+  const AttachmentThumbnailViewer = ({
+    attachment,
+    onClose
+  }: {
+    attachment: Attachment;
     onClose: () => void;
   }) => {
     const [isLoading, setIsLoading] = useState(true);
@@ -733,13 +736,13 @@ const Board = () => {
     const renderPreview = () => {
       const fileType = attachment.type?.toLowerCase() || '';
       const fileName = attachment.name?.toLowerCase() || '';
-      
+
       // Image preview
       if (fileType.startsWith('image/') || /\.(jpg|jpeg|png|gif|bmp|webp|svg)$/i.test(fileName)) {
-        const imageUrl = driveId 
+        const imageUrl = driveId
           ? `https://drive.google.com/thumbnail?id=${driveId}&sz=w2000`
           : attachment.url;
-        
+
         return (
           <div className="w-full h-full flex items-center justify-center p-2 sm:p-6 bg-checkerboard">
             <div className="relative max-w-full max-h-full shadow-2xl rounded-lg overflow-hidden group">
@@ -762,15 +765,15 @@ const Board = () => {
           </div>
         );
       }
-      
+
       // PDF/Document preview
       if (fileType === 'application/pdf' || fileName.endsWith('.pdf') || /\.(doc|docx|xls|xlsx|ppt|pptx)$/i.test(fileName)) {
         const docUrl = driveId
           ? `https://drive.google.com/file/d/${driveId}/preview`
-          : fileName.endsWith('.pdf') 
-            ? attachment.url 
+          : fileName.endsWith('.pdf')
+            ? attachment.url
             : `https://docs.google.com/viewer?url=${encodeURIComponent(attachment.url)}&embedded=true`;
-        
+
         return (
           <div className="w-full h-full relative">
             {isLoading && (
@@ -788,7 +791,7 @@ const Board = () => {
           </div>
         );
       }
-      
+
       // Generic file fallback
       return (
         <div className="flex flex-col items-center justify-center h-full p-8 text-center">
@@ -865,7 +868,7 @@ const Board = () => {
               </button>
             </div>
           </div>
-          
+
           {/* Preview Content */}
           <div className="flex-1 bg-gray-950 relative overflow-hidden">
             {error ? (
@@ -947,7 +950,7 @@ const Board = () => {
                       <div className="min-w-0 flex-1">
                         <p className="text-xs font-medium truncate">{comment.user}</p>
                         <p className="text-xs text-purple-300">
-                          {comment.timestamp instanceof Date 
+                          {comment.timestamp instanceof Date
                             ? comment.timestamp.toLocaleString()
                             : new Date(comment.timestamp).toLocaleString()
                           }
@@ -1031,10 +1034,10 @@ const Board = () => {
   };
 
   // FIXED: ShareBoardModal Component - Role changes restricted by permission
-  const EnhancedShareBoardModal = ({ 
-    board, 
-    isOpen, 
-    onClose, 
+  const EnhancedShareBoardModal = ({
+    board,
+    isOpen,
+    onClose,
     onUpdateMembers,
     onRemoveMember,
     canChangeRoles: hasRoleChangePermission // NEW: Permission prop
@@ -1044,7 +1047,7 @@ const Board = () => {
     const [pendingMembers, setPendingMembers] = useState<{ email: string; role: 'member' | 'manager' | 'instructor' }[]>(board.members as { email: string; role: 'member' | 'manager' | 'instructor' }[]);
     const [pendingChanges, setPendingChanges] = useState(false);
     const [memberToRemove, setMemberToRemove] = useState<{ email: string; role: 'member' | 'manager' | 'instructor' } | null>(null);
-    
+
     // User autocomplete state
     const [allUsers, setAllUsers] = useState<Array<{ email: string; firstName: string; lastName: string }>>([]);
     const [filteredUsers, setFilteredUsers] = useState<Array<{ email: string; firstName: string; lastName: string }>>([]);
@@ -1076,7 +1079,7 @@ const Board = () => {
           console.error('Error fetching users:', error);
         }
       };
-      
+
       if (isOpen) {
         fetchUsers();
       }
@@ -1087,19 +1090,19 @@ const Board = () => {
       if (isOpen) {
         const pmEmail = (board as any).userEmail;
         let membersWithPM = [...board.members];
-        
+
         // Ensure PM is always in the list
         if (pmEmail && !membersWithPM.find(m => m.email === pmEmail)) {
           membersWithPM.unshift({ email: pmEmail, role: 'manager' as const });
         }
-        
+
         setPendingMembers(membersWithPM);
         setPendingChanges(false);
         setMemberToRemove(null);
         setNewMemberRole('member'); // Reset role to 'member' on open
       }
     }, [isOpen, board.members]);
-    
+
     // Filter users based on email or name input
     useEffect(() => {
       if (email.trim().length > 0) {
@@ -1109,9 +1112,9 @@ const Board = () => {
           const matchFirstName = user.firstName?.toLowerCase().includes(searchTerm);
           const matchLastName = user.lastName?.toLowerCase().includes(searchTerm);
           const matchFullName = `${user.firstName} ${user.lastName}`.toLowerCase().includes(searchTerm);
-          
+
           return (matchEmail || matchFirstName || matchLastName || matchFullName) &&
-                 !pendingMembers.some(m => m.email === user.email);
+            !pendingMembers.some(m => m.email === user.email);
         });
         setFilteredUsers(filtered);
         setShowSuggestions(filtered.length > 0);
@@ -1129,30 +1132,30 @@ const Board = () => {
     const handleAddMember = (e: React.FormEvent) => {
       e.preventDefault();
       const emailTrimmed = email.trim();
-      
+
       if (!emailTrimmed) {
         toast.error('Please enter an email address');
         return;
       }
-      
+
       // Basic email validation
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(emailTrimmed)) {
         toast.error('Please enter a valid email address');
         return;
       }
-      
+
       if (pendingMembers.some(m => m.email === emailTrimmed)) {
         toast.error('Member already exists');
         return;
       }
-      
+
       // FIXED: Use selected role, not hardcoded 'manager'
-      const newMember = { 
-        email: emailTrimmed, 
-        role: newMemberRole 
+      const newMember = {
+        email: emailTrimmed,
+        role: newMemberRole
       };
-      
+
       setPendingMembers([...pendingMembers, newMember]);
       setEmail('');
       setNewMemberRole('member'); // Reset to 'member' after adding
@@ -1178,7 +1181,7 @@ const Board = () => {
     const handleSaveChanges = async () => {
       // Find newly added members
       const originalMemberEmails = board.members.map((m: any) => m.email);
-      
+
       // Ensure PM is considered an original member so they don't get notified
       const pmEmail = (board as any).userEmail;
       if (pmEmail && !originalMemberEmails.includes(pmEmail)) {
@@ -1193,14 +1196,14 @@ const Board = () => {
       const removedMembers = originalMemberEmails.filter(
         email => !pendingMembers.some(m => m.email === email) && email !== pmEmail
       );
-      
+
       const senderFullName = user?.firstName ? `${user.firstName} ${user.lastName}` : 'Board Admin';
 
       // Send notifications to newly added members
       for (const member of newlyAddedMembers) {
         // Don't notify the person making the change
         if (user?.email && member.email === user.email) continue;
-        
+
         await sendNotification(
           member.email,
           'board_added',
@@ -1219,12 +1222,11 @@ const Board = () => {
 
         await sendNotification(
           memberEmail,
-          'board_updated',
+          'board_removed',
           {
             boardTitle: board.title,
             boardId: board.id,
             senderName: senderFullName,
-            changeType: 'removed_from_board',
             message: `You have been removed from the board "${board.title}" by ${senderFullName}.`
           }
         );
@@ -1241,7 +1243,11 @@ const Board = () => {
 
       onUpdateMembers(pendingMembers);
       setPendingChanges(false);
-      toast.success('Board members updated successfully');
+      if (removedMembers.length > 0) {
+        toast.success('Board members updated and removed members notified');
+      } else {
+        toast.success('Board members updated successfully');
+      }
       onClose();
     };
 
@@ -1348,36 +1354,33 @@ const Board = () => {
                     const isProjectManager = member.email === board.userEmail;
                     const isOriginalPM = board.userEmail === member.email;
                     const roleLabel = isProjectManager || isOriginalPM
-                      ? 'Project Manager' 
+                      ? 'Project Manager'
                       : member.role === 'instructor' ? 'Instructor' : member.role === 'manager' ? 'Manager' : 'Team Member';
-                    
+
                     return (
                       <div
                         key={member.email}
-                        className={`flex items-center justify-between p-2 rounded-lg compact-card ${
-                          isProjectManager || isOriginalPM 
-                            ? 'bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30' 
-                            : 'glass'
-                        }`}
+                        className={`flex items-center justify-between p-2 rounded-lg compact-card ${isProjectManager || isOriginalPM
+                          ? 'bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30'
+                          : 'glass'
+                          }`}
                       >
                         <div className="flex items-center gap-2 min-w-0 flex-1">
                           <Avatar className="w-6 h-6 flex-shrink-0">
-                            <AvatarFallback className={`text-xs ${
-                              isProjectManager || isOriginalPM 
-                                ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white' 
-                                : 'gradient-secondary'
-                            }`}>
+                            <AvatarFallback className={`text-xs ${isProjectManager || isOriginalPM
+                              ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white'
+                              : 'gradient-secondary'
+                              }`}>
                               {member.email[0].toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
                           <div className="min-w-0 flex-1">
                             <p className="text-xs font-medium truncate">{member.email}</p>
-                            <p className={`text-xs ${
-                              isProjectManager || isOriginalPM ? 'text-amber-400 font-semibold' : 'text-purple-300'
-                            }`}>{roleLabel}</p>
+                            <p className={`text-xs ${isProjectManager || isOriginalPM ? 'text-amber-400 font-semibold' : 'text-purple-300'
+                              }`}>{roleLabel}</p>
                           </div>
                         </div>
-                      
+
                         <div className="flex items-center gap-1 flex-shrink-0">
                           {!isProjectManager && !isOriginalPM && (
                             <>
@@ -1387,7 +1390,7 @@ const Board = () => {
                                   value={member.role}
                                   onChange={(e) => {
                                     const updatedMembers = pendingMembers.map(m =>
-                                      m.email === member.email 
+                                      m.email === member.email
                                         ? { ...m, role: e.target.value as 'member' | 'manager' | 'instructor' }
                                         : m
                                     );
@@ -1405,7 +1408,7 @@ const Board = () => {
                                   {member.role === 'manager' ? 'Manager' : 'Member'}
                                 </span>
                               )}
-                              
+
                               {/* Remove button - Only show if user has permission */}
                               {hasRoleChangePermission && (
                                 <button
@@ -1427,15 +1430,15 @@ const Board = () => {
             </div>
 
             <div className="flex justify-between p-4 border-t border-white/10 gap-2">
-              <Button 
-                onClick={handleClose} 
-                variant="ghost" 
+              <Button
+                onClick={handleClose}
+                variant="ghost"
                 className="glass hover-glow flex-1 h-9 text-sm"
               >
                 Cancel
               </Button>
-              <Button 
-                onClick={handleSaveChanges} 
+              <Button
+                onClick={handleSaveChanges}
                 className="gradient-primary hover-glow flex-1 h-9 text-sm"
                 disabled={!pendingChanges}
               >
@@ -1476,12 +1479,12 @@ const Board = () => {
   };
 
   // Enhanced Card Modal Component with FIXED issues
-  const EnhancedCardModal = ({ 
-    card, 
-    isOpen, 
-    onClose, 
-    onSave, 
-    onDelete, 
+  const EnhancedCardModal = ({
+    card,
+    isOpen,
+    onClose,
+    onSave,
+    onDelete,
     boardMembers,
     lists = [],
     currentListId,
@@ -1496,37 +1499,37 @@ const Board = () => {
     const [selectedAttachment, setSelectedAttachment] = useState<Attachment | null>(null);
     const [showAttachmentPreview, setShowAttachmentPreview] = useState(false);
     const [cardDueDate, setCardDueDate] = useState<string>(() => {
-        if (card.dueDate) {
-          const date = new Date(card.dueDate);
-          // Convert to local datetime string for input
-          const year = date.getFullYear();
-          const month = String(date.getMonth() + 1).padStart(2, '0');
-          const day = String(date.getDate()).padStart(2, '0');
-          const hours = String(date.getHours()).padStart(2, '0');
-          const minutes = String(date.getMinutes()).padStart(2, '0');
-          return `${year}-${month}-${day}T${hours}:${minutes}`;
-        }
-        return '';
-      });
-      
+      if (card.dueDate) {
+        const date = new Date(card.dueDate);
+        // Convert to local datetime string for input
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        return `${year}-${month}-${day}T${hours}:${minutes}`;
+      }
+      return '';
+    });
 
-      useEffect(() => {
-  // Prevent body scroll when preview is open
-  if (selectedAttachment) {
-    document.body.style.overflow = 'hidden';
-  } else {
-    document.body.style.overflow = 'unset';
-  }
-  
-  return () => {
-    document.body.style.overflow = 'unset';
-  };
-}, [selectedAttachment]);
+
+    useEffect(() => {
+      // Prevent body scroll when preview is open
+      if (selectedAttachment) {
+        document.body.style.overflow = 'hidden';
+      } else {
+        document.body.style.overflow = 'unset';
+      }
+
+      return () => {
+        document.body.style.overflow = 'unset';
+      };
+    }, [selectedAttachment]);
 
     const [cardGoogleEventId, setCardGoogleEventId] = useState<string>(
       (card as any).googleEventId || ''
     );
-    
+
     // ✅ FIXED: Sync state when card or modal state changes
     useEffect(() => {
       if (isOpen) {
@@ -1537,7 +1540,7 @@ const Board = () => {
         setCardGoogleEventId((card as any).googleEventId || '');
         setMemberDeadlines((card as any).memberDeadlines || {});
         setMemberEventIds((card as any).memberEventIds || {});
-        
+
         if (card.dueDate) {
           const date = new Date(card.dueDate);
           const year = date.getFullYear();
@@ -1557,12 +1560,12 @@ const Board = () => {
     );
 
 
-    
-    
+
+
     // FIXED: Add a ref to track initial comments for comparison
     const initialCommentsRef = useRef<ModalComment[]>([]);
     const [comments, setComments] = useState<ModalComment[]>([]);
-    
+
     // FIXED: Initialize comments properly
     useEffect(() => {
       if (isOpen) {
@@ -1571,7 +1574,7 @@ const Board = () => {
           user: comment.user,
           userEmail: (comment as any).userEmail || '',
           text: comment.text,
-          timestamp: comment.timestamp instanceof Date 
+          timestamp: comment.timestamp instanceof Date
             ? comment.timestamp.toISOString()
             : comment.timestamp
         }));
@@ -1589,7 +1592,7 @@ const Board = () => {
     const [memberEventIds, setMemberEventIds] = useState<Record<string, string>>(
       (card as any).memberEventIds || {}
     );
-    
+
     // FIXED: Upload state
     const [uploadCancelController, setUploadCancelController] = useState<AbortController | null>(null);
     const [uploadProgress, setUploadProgress] = useState(0);
@@ -1603,14 +1606,14 @@ const Board = () => {
         setIsUploading(false);
         setUploadCancelController(null);
         setUploadProgress(0);
-        
+
         // Clear toast
         if (uploadToastId) {
           toast.dismiss(uploadToastId);
         }
-        
+
         toast.info("Upload cancelled. Changes have been saved.");
-        
+
         // Ensure any partially uploaded files are saved
         if (attachments.length > 0 && card.id !== 'temp-new-card') {
           // Save current attachments state
@@ -1624,39 +1627,39 @@ const Board = () => {
     };
 
     // FIXED: Sync attachments from card data when modal opens or card changes
-useEffect(() => {
-  if (isOpen) {
-    // Initialize attachments only once when modal opens
-    const initialAttachments = card.attachments.map((attachment) => {
-      // If attachment is already an object with proper structure, use it
-      if (typeof attachment === 'object' && attachment !== null && !Array.isArray(attachment)) {
-        return {
-          id: attachment.id || `att-${crypto.randomUUID()}`,
-          name: attachment.name || 'Unknown',
-          size: attachment.size || 'Unknown',
-          type: attachment.type || 'file',
-          url: attachment.url || '',
-          drive: attachment.drive || false
-        };
+    useEffect(() => {
+      if (isOpen) {
+        // Initialize attachments only once when modal opens
+        const initialAttachments = card.attachments.map((attachment) => {
+          // If attachment is already an object with proper structure, use it
+          if (typeof attachment === 'object' && attachment !== null && !Array.isArray(attachment)) {
+            return {
+              id: attachment.id || `att-${crypto.randomUUID()}`,
+              name: attachment.name || 'Unknown',
+              size: attachment.size || 'Unknown',
+              type: attachment.type || 'file',
+              url: attachment.url || '',
+              drive: attachment.drive || false
+            };
+          }
+
+          // If attachment is a string (legacy format), convert it
+          return {
+            id: `att-${crypto.randomUUID()}`,
+            name: String(attachment),
+            size: 'Unknown',
+            type: 'file',
+            url: '',
+            drive: false
+          };
+        });
+
+        setAttachments(initialAttachments);
+      } else {
+        // Clear attachments when modal closes
+        setAttachments([]);
       }
-      
-      // If attachment is a string (legacy format), convert it
-      return {
-        id: `att-${crypto.randomUUID()}`,
-        name: String(attachment),
-        size: 'Unknown',
-        type: 'file',
-        url: '',
-        drive: false
-      };
-    });
-    
-    setAttachments(initialAttachments);
-  } else {
-    // Clear attachments when modal closes
-    setAttachments([]);
-  }
-}, [isOpen]); // Only depend on isOpen, not card.attachments
+    }, [isOpen]); // Only depend on isOpen, not card.attachments
 
     useEffect(() => {
       const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -1666,62 +1669,62 @@ useEffect(() => {
     }, []);
 
     // FIXED: Enhanced handleViewAttachment function
-      const handleViewAttachment = (attachment: Attachment) => {
-    if (!attachment) {
-      toast.error('Attachment not found');
-      return;
-    }
-    
-    // Helper to extract drive ID
-    const getDriveId = (url: string): string | null => {
-      if (!url) return null;
-      const patterns = [
-        /\/d\/([a-zA-Z0-9_-]+)/,
-        /id=([a-zA-Z0-9_-]+)/,
-        /^([a-zA-Z0-9_-]{25,})$/
-      ];
-      for (const pattern of patterns) {
-        const match = url.match(pattern);
-        if (match) return match[1];
+    const handleViewAttachment = (attachment: Attachment) => {
+      if (!attachment) {
+        toast.error('Attachment not found');
+        return;
       }
-      return null;
-    };
-    
-    const driveId = attachment.id || getDriveId(attachment.url);
-    
-    // Check if we have a valid URL or can construct one
-    if (attachment.url && (attachment.url.startsWith('http') || attachment.url.startsWith('blob:'))) {
-      // If URL looks like it might not work for preview, fix it
-      if (driveId && attachment.type?.startsWith('image/')) {
-        // Use thumbnail URL for images
-        setSelectedAttachment({ 
-          ...attachment, 
-          url: `https://drive.google.com/thumbnail?id=${driveId}&sz=w1000` 
-        });
+
+      // Helper to extract drive ID
+      const getDriveId = (url: string): string | null => {
+        if (!url) return null;
+        const patterns = [
+          /\/d\/([a-zA-Z0-9_-]+)/,
+          /id=([a-zA-Z0-9_-]+)/,
+          /^([a-zA-Z0-9_-]{25,})$/
+        ];
+        for (const pattern of patterns) {
+          const match = url.match(pattern);
+          if (match) return match[1];
+        }
+        return null;
+      };
+
+      const driveId = attachment.id || getDriveId(attachment.url);
+
+      // Check if we have a valid URL or can construct one
+      if (attachment.url && (attachment.url.startsWith('http') || attachment.url.startsWith('blob:'))) {
+        // If URL looks like it might not work for preview, fix it
+        if (driveId && attachment.type?.startsWith('image/')) {
+          // Use thumbnail URL for images
+          setSelectedAttachment({
+            ...attachment,
+            url: `https://drive.google.com/thumbnail?id=${driveId}&sz=w1000`
+          });
+        } else if (driveId) {
+          // Use preview URL for other files
+          setSelectedAttachment({
+            ...attachment,
+            url: `https://drive.google.com/file/d/${driveId}/preview`
+          });
+        } else {
+          setSelectedAttachment(attachment);
+        }
       } else if (driveId) {
-        // Use preview URL for other files
-        setSelectedAttachment({ 
-          ...attachment, 
-          url: `https://drive.google.com/file/d/${driveId}/preview` 
-        });
+        // Construct URL from drive ID
+        const url = attachment.type?.startsWith('image/')
+          ? `https://drive.google.com/thumbnail?id=${driveId}&sz=w1000`
+          : `https://drive.google.com/file/d/${driveId}/preview`;
+        setSelectedAttachment({ ...attachment, url });
       } else {
+        // Fallback - try to open in viewer anyway
         setSelectedAttachment(attachment);
+        toast.info('Preview may not be available for this file');
       }
-    } else if (driveId) {
-      // Construct URL from drive ID
-      const url = attachment.type?.startsWith('image/')
-        ? `https://drive.google.com/thumbnail?id=${driveId}&sz=w1000`
-        : `https://drive.google.com/file/d/${driveId}/preview`;
-      setSelectedAttachment({ ...attachment, url });
-    } else {
-      // Fallback - try to open in viewer anyway
-      setSelectedAttachment(attachment);
-      toast.info('Preview may not be available for this file');
-    }
-    
-    // Show the preview modal
-    setShowAttachmentPreview(true);
-  };
+
+      // Show the preview modal
+      setShowAttachmentPreview(true);
+    };
 
 
     const handleAddLabel = () => {
@@ -1744,7 +1747,7 @@ useEffect(() => {
         setMemberDeadlines(updatedDeadlines);
       } else {
         setAssignedMembers([...assignedMembers, member]);
-        
+
         // Removed: Automatic notification during toggle - handled on save in backend
         // toast.success(`${member} has been notified about their assignment`);
       }
@@ -1757,7 +1760,7 @@ useEffect(() => {
 
       try {
         const existingEventId = memberEventIds[memberEmail];
-        
+
         // Convert to ISO string for Google Calendar
         const isoDate = new Date(date).toISOString();
 
@@ -1788,7 +1791,7 @@ useEffect(() => {
         console.error(err);
         const errorMsg = typeof err === 'string' ? err : err?.error || err?.message || '';
         const toastId = `google-sync-cancel-${Date.now()}`;
-        
+
         if (errorMsg === 'popup_closed' || errorMsg.includes('popup_closed')) {
           toast.error(`Google sync cancelled. Deadline for ${memberEmail} saved locally but not synced to Calendar.`, {
             duration: 6000,
@@ -1865,7 +1868,7 @@ useEffect(() => {
                 );
               }
             }
-            
+
             toast.success("Comment posted successfully!");
           } else {
             toast.error("Failed to save comment");
@@ -1883,16 +1886,21 @@ useEffect(() => {
       }
     };
 
-const handleSave = async () => {
+    const handleSave = async () => {
       if (!title.trim()) {
         toast.error('Card title is required');
         return;
       }
-      
+
       try {
         // Find removed members for notification
         const removedAssignedMembers = card.assignedMembers.filter(
           m => !assignedMembers.includes(m)
+        );
+        
+        // Find newly assigned members for toast
+        const newlyAssignedMembers = assignedMembers.filter(
+          m => !card.assignedMembers.includes(m)
         );
 
         // Prepare updates including all current state
@@ -1902,7 +1910,7 @@ const handleSave = async () => {
           labels,
           assignedMembers,
           // ✅ FIXED: Convert local datetime-local string to proper ISO string with UTC
-          dueDate: cardDueDate ? new Date(cardDueDate).toISOString() : '', 
+          dueDate: cardDueDate ? new Date(cardDueDate).toISOString() : '',
           googleEventId: cardGoogleEventId || undefined,
           memberDeadlines,
           memberEventIds,
@@ -1921,12 +1929,17 @@ const handleSave = async () => {
             drive: att.drive || false,
           })),
         };
-        
+
         // Save card - this should trigger a re-render with updated card data
         await onSave(updates);
-        
+
+        if (newlyAssignedMembers.length > 0) {
+          toast.success("Assigned members notified about their assignment");
+        }
+
         // Notify removed members
         if (removedAssignedMembers.length > 0 && board) {
+          toast.success("Removed members notified about being unassigned from card");
           const storedUser = JSON.parse(localStorage.getItem("user") || "null");
           const senderName = storedUser?.firstName && storedUser?.lastName
             ? `${storedUser.firstName} ${storedUser.lastName}`
@@ -1937,14 +1950,13 @@ const handleSave = async () => {
             if (member !== storedUser?.email) {
               await sendNotification(
                 member,
-                'board_updated',
+                'card_removed',
                 {
                   boardTitle: board.title,
                   boardId: board.id,
                   cardTitle: title,
                   cardId: card.id,
                   senderName: senderName,
-                  changeType: 'removed_from_card',
                   message: `You have been removed from the card "${title}" in board "${board.title}" by ${senderName}.`
                 }
               );
@@ -1954,51 +1966,51 @@ const handleSave = async () => {
 
         // FIX: Send notifications for NEW comments only
         if (card.id !== 'temp-new-card' && board) {
-      const originalComments = initialCommentsRef.current || [];
-      const newComments = comments.filter(newComment => 
-        !originalComments.some(oldComment => 
-          oldComment.text === newComment.text && 
-          oldComment.user === newComment.user
-        )
-      );
-      
-      if (newComments.length > 0) {
-        const storedUser = JSON.parse(localStorage.getItem("user") || "null");
-        const senderName = storedUser?.firstName && storedUser?.lastName
-          ? `${storedUser.firstName} ${storedUser.lastName}`
-          : storedUser?.email || "Unknown User";
-        
-        for (const member of assignedMembers) {
-          // Don't send to commenter
-          if (member !== storedUser?.email) {
-            for (const comment of newComments) {
-              await sendNotification(
-                member,
-                'card_comment',
-                {
-                  boardTitle: board.title,
-                  cardTitle: title,
-                  cardId: card.id,
-                  commentText: comment.text,
-                  senderName: senderName,
+          const originalComments = initialCommentsRef.current || [];
+          const newComments = comments.filter(newComment =>
+            !originalComments.some(oldComment =>
+              oldComment.text === newComment.text &&
+              oldComment.user === newComment.user
+            )
+          );
+
+          if (newComments.length > 0) {
+            const storedUser = JSON.parse(localStorage.getItem("user") || "null");
+            const senderName = storedUser?.firstName && storedUser?.lastName
+              ? `${storedUser.firstName} ${storedUser.lastName}`
+              : storedUser?.email || "Unknown User";
+
+            for (const member of assignedMembers) {
+              // Don't send to commenter
+              if (member !== storedUser?.email) {
+                for (const comment of newComments) {
+                  await sendNotification(
+                    member,
+                    'card_comment',
+                    {
+                      boardTitle: board.title,
+                      cardTitle: title,
+                      cardId: card.id,
+                      commentText: comment.text,
+                      senderName: senderName,
+                    }
+                  );
                 }
-              );
+              }
+            }
+
+            if (assignedMembers.length > 1) {
+              // toast.success("Assigned members notified about new comments");
             }
           }
         }
-        
-        if (assignedMembers.length > 1) {
-          toast.success("Assigned members notified about new comments");
-        }
+
+        onClose();
+      } catch (error) {
+        console.error('Failed to save card:', error);
+        toast.error('Failed to save card. Please try again.');
       }
-    }
-    
-    onClose();
-  } catch (error) {
-    console.error('Failed to save card:', error);
-    toast.error('Failed to save card. Please try again.');
-  }
-};
+    };
 
     // FIXED: Pre-authenticate to preserve user gesture context
     const handleUploadFromDevice = async () => {
@@ -2018,7 +2030,7 @@ const handleSave = async () => {
             fileInputRef.current?.click();
             return;
           }
-        } catch (e) {}
+        } catch (e) { }
       }
 
       // No valid token, trigger auth popup DIRECTLY from button click
@@ -2034,176 +2046,176 @@ const handleSave = async () => {
       }
     };
 
-// FIXED: Enhanced file upload handler with proper persistence
-const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-  const files = e.target.files;
-  if (!files || files.length === 0) return;
+    // FIXED: Enhanced file upload handler with proper persistence
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const files = e.target.files;
+      if (!files || files.length === 0) return;
 
-  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-  if (!clientId) {
-    toast.error("Missing Google Client ID");
-    return;
-  }
-
-  // Set up states for progress tracking
-  const controller = new AbortController();
-  setUploadCancelController(controller);
-  setIsUploading(true);
-  setUploadProgress(0);
-
-  const toastId = toast.loading("Initializing upload...");
-  setUploadToastId(toastId);
-
-  try {
-    // This should now be silent/cached because we authed in handleUploadFromDevice
-    const accessToken = await getGoogleAccessToken(clientId);
-    if (!accessToken) {
-      throw new Error("Google Drive access denied. Please try again.");
-    }
-
-    // Get proper IDs
-    const cardId = card.id || card._id;
-    const listId = currentListId;
-    const boardId = board?.id || board?._id;
-    const userId = user?.email || user?._id || "anonymous";
-
-    const uploadedAttachments: Attachment[] = [];
-    const totalFiles = Array.from(files).length;
-    let completedCount = 0;
-
-    toast.loading(`Uploading ${totalFiles} file(s) to Google Drive... 0%`, { id: toastId });
-
-    // 2. Upload files in parallel
-    const uploadPromises = Array.from(files).map(async (file) => {
-      try {
-        const uploadedFile = await uploadAttachmentToGoogleDrive(
-          file, 
-          userId as string,
-          (progress: number) => {
-            // This is per-file progress, we calculate overall below
-          },
-          controller
-        );
-
-        if (uploadedFile) {
-          const attachment: Attachment = {
-            id: uploadedFile.id || crypto.randomUUID(),
-            name: uploadedFile.name || file.name,
-            url: uploadedFile.url || `https://drive.google.com/file/d/${uploadedFile.id}/view`,
-            size: (file.size / 1024 / 1024).toFixed(2) + "MB",
-            type: file.type,
-            drive: true,
-            driveId: uploadedFile.id,
-          };
-
-          // Save to backend immediately for existing cards
-          if (cardId && cardId !== 'temp-new-card' && boardId && listId) {
-            const token = localStorage.getItem('token');
-            await axios.post(
-              `${API_URL}/api/boards/${boardId}/lists/${listId}/cards/${cardId}/attachments`,
-              {
-                id: attachment.id,
-                name: attachment.name,
-                url: attachment.url,
-                size: attachment.size,
-                type: attachment.type,
-                driveId: uploadedFile.id,
-                drive: true,
-              },
-              { headers: { Authorization: `Bearer ${token}` } }
-            );
-          }
-          
-          completedCount++;
-          const overallProgress = Math.round((completedCount / totalFiles) * 100);
-          setUploadProgress(overallProgress);
-          toast.loading(`Uploading... ${overallProgress}% (${completedCount}/${totalFiles})`, { id: toastId });
-          
-          return attachment;
-        }
-        return null;
-      } catch (err: any) {
-        console.error(`Failed to upload ${file.name}:`, err);
-        toast.error(`Failed to upload ${file.name}`);
-        return null;
+      const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+      if (!clientId) {
+        toast.error("Missing Google Client ID");
+        return;
       }
-    });
 
-    const results = await Promise.all(uploadPromises);
-    const successfulAttachments = results.filter((a): a is Attachment => a !== null);
-    
-    if (successfulAttachments.length === 0) {
-      throw new Error("No files were uploaded successfully");
-    }
+      // Set up states for progress tracking
+      const controller = new AbortController();
+      setUploadCancelController(controller);
+      setIsUploading(true);
+      setUploadProgress(0);
 
-    // 3. Update all states once at the end
-    const updatedAttachments = [...attachments, ...successfulAttachments];
-    setAttachments(updatedAttachments);
-    
-    // Update parent state
-    if (cardId !== 'temp-new-card') {
-      // Create simplified attachment objects for onSave
-      const simplifiedAttachments = updatedAttachments.map(att => ({
-        id: att.id,
-        name: att.name,
-        url: att.url,
-        size: att.size,
-        type: att.type,
-        drive: att.drive || false,
-      }));
+      const toastId = toast.loading("Initializing upload...");
+      setUploadToastId(toastId);
 
-      // Update parent component via onSave
-      onSave({ attachments: simplifiedAttachments });
-      
-      // Also update selectedCard to reflect changes in current modal
-      if (selectedCard && selectedCard.card.id === cardId) {
-        setSelectedCard({
-          ...selectedCard,
-          card: {
-            ...selectedCard.card,
-            attachments: simplifiedAttachments
+      try {
+        // This should now be silent/cached because we authed in handleUploadFromDevice
+        const accessToken = await getGoogleAccessToken(clientId);
+        if (!accessToken) {
+          throw new Error("Google Drive access denied. Please try again.");
+        }
+
+        // Get proper IDs
+        const cardId = card.id || card._id;
+        const listId = currentListId;
+        const boardId = board?.id || board?._id;
+        const userId = user?.email || user?._id || "anonymous";
+
+        const uploadedAttachments: Attachment[] = [];
+        const totalFiles = Array.from(files).length;
+        let completedCount = 0;
+
+        toast.loading(`Uploading ${totalFiles} file(s) to Google Drive... 0%`, { id: toastId });
+
+        // 2. Upload files in parallel
+        const uploadPromises = Array.from(files).map(async (file) => {
+          try {
+            const uploadedFile = await uploadAttachmentToGoogleDrive(
+              file,
+              userId as string,
+              (progress: number) => {
+                // This is per-file progress, we calculate overall below
+              },
+              controller
+            );
+
+            if (uploadedFile) {
+              const attachment: Attachment = {
+                id: uploadedFile.id || crypto.randomUUID(),
+                name: uploadedFile.name || file.name,
+                url: uploadedFile.url || `https://drive.google.com/file/d/${uploadedFile.id}/view`,
+                size: (file.size / 1024 / 1024).toFixed(2) + "MB",
+                type: file.type,
+                drive: true,
+                driveId: uploadedFile.id,
+              };
+
+              // Save to backend immediately for existing cards
+              if (cardId && cardId !== 'temp-new-card' && boardId && listId) {
+                const token = localStorage.getItem('token');
+                await axios.post(
+                  `${API_URL}/api/boards/${boardId}/lists/${listId}/cards/${cardId}/attachments`,
+                  {
+                    id: attachment.id,
+                    name: attachment.name,
+                    url: attachment.url,
+                    size: attachment.size,
+                    type: attachment.type,
+                    driveId: uploadedFile.id,
+                    drive: true,
+                  },
+                  { headers: { Authorization: `Bearer ${token}` } }
+                );
+              }
+
+              completedCount++;
+              const overallProgress = Math.round((completedCount / totalFiles) * 100);
+              setUploadProgress(overallProgress);
+              toast.loading(`Uploading... ${overallProgress}% (${completedCount}/${totalFiles})`, { id: toastId });
+
+              return attachment;
+            }
+            return null;
+          } catch (err: any) {
+            console.error(`Failed to upload ${file.name}:`, err);
+            toast.error(`Failed to upload ${file.name}`);
+            return null;
           }
         });
-      }
-      
-      toast.success(`Successfully uploaded ${successfulAttachments.length} file(s) to Google Drive`);
-    } else {
-      toast.info("Files uploaded. Save the card to attach them.");
-    }
 
-    // Success cleanup
-    setIsUploading(false);
-    setUploadCancelController(null);
-    setUploadProgress(0);
-    toast.dismiss(toastId);
-    
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  } catch (error: any) {
-    setIsUploading(false);
-    setUploadCancelController(null);
-    setUploadProgress(0);
-    toast.dismiss(toastId);
-    
-    if (error.message === "Upload cancelled") {
-      toast.info("Upload cancelled");
-    } else {
-      console.error("Upload failed:", error);
-      toast.error(`Upload failed: ${error.message || "Unknown error"}`);
-    }
-    
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  }
-};
+        const results = await Promise.all(uploadPromises);
+        const successfulAttachments = results.filter((a): a is Attachment => a !== null);
+
+        if (successfulAttachments.length === 0) {
+          throw new Error("No files were uploaded successfully");
+        }
+
+        // 3. Update all states once at the end
+        const updatedAttachments = [...attachments, ...successfulAttachments];
+        setAttachments(updatedAttachments);
+
+        // Update parent state
+        if (cardId !== 'temp-new-card') {
+          // Create simplified attachment objects for onSave
+          const simplifiedAttachments = updatedAttachments.map(att => ({
+            id: att.id,
+            name: att.name,
+            url: att.url,
+            size: att.size,
+            type: att.type,
+            drive: att.drive || false,
+          }));
+
+          // Update parent component via onSave
+          onSave({ attachments: simplifiedAttachments });
+
+          // Also update selectedCard to reflect changes in current modal
+          if (selectedCard && selectedCard.card.id === cardId) {
+            setSelectedCard({
+              ...selectedCard,
+              card: {
+                ...selectedCard.card,
+                attachments: simplifiedAttachments
+              }
+            });
+          }
+
+          toast.success(`Successfully uploaded ${successfulAttachments.length} file(s) to Google Drive`);
+        } else {
+          toast.info("Files uploaded. Save the card to attach them.");
+        }
+
+        // Success cleanup
+        setIsUploading(false);
+        setUploadCancelController(null);
+        setUploadProgress(0);
+        toast.dismiss(toastId);
+
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+      } catch (error: any) {
+        setIsUploading(false);
+        setUploadCancelController(null);
+        setUploadProgress(0);
+        toast.dismiss(toastId);
+
+        if (error.message === "Upload cancelled") {
+          toast.info("Upload cancelled");
+        } else {
+          console.error("Upload failed:", error);
+          toast.error(`Upload failed: ${error.message || "Unknown error"}`);
+        }
+
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+      }
+    };
 
     // FIXED: Enhanced attachment removal with backend sync
     const handleRemoveAttachment = async (attachmentId: string) => {
       const attachmentToRemove = attachments.find(a => a.id === attachmentId);
       if (!attachmentToRemove) return;
-      
+
       try {
         // Remove from backend if card exists
         if (card.id !== 'temp-new-card' && board?.id) {
@@ -2212,7 +2224,7 @@ const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
             `http://localhost:5000/api/boards/${board.id}/cards/${card.id}/attachments/${attachmentToRemove.name}`,
             { headers: { Authorization: `Bearer ${token}` } }
           );
-          
+
           // Update card's attachments list
           await axios.put(
             `http://localhost:5000/api/boards/${board.id}/cards/${card.id}`,
@@ -2220,13 +2232,13 @@ const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
             { headers: { Authorization: `Bearer ${token}` } }
           );
         }
-        
+
         // Update local state
         const updatedAttachments = attachments.filter(a => a.id !== attachmentId);
         setAttachments(updatedAttachments);
-        
+
         toast.success('Attachment removed');
-        
+
       } catch (error) {
         console.error('Failed to remove attachment:', error);
         toast.error('Failed to remove attachment');
@@ -2363,11 +2375,10 @@ const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
                     <button
                       key={idx}
                       onClick={() => handleToggleMember(member.email)}
-                      className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all text-sm ${
-                        assignedMembers.includes(member.email)
-                          ? 'gradient-primary text-white'
-                          : 'glass hover:bg-white/10'
-                      }`}
+                      className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all text-sm ${assignedMembers.includes(member.email)
+                        ? 'gradient-primary text-white'
+                        : 'glass hover:bg-white/10'
+                        }`}
                     >
                       <Avatar className="w-6 h-6">
                         <AvatarFallback className={assignedMembers.includes(member.email) ? 'bg-white/20' : 'gradient-secondary text-xs'}>
@@ -2425,15 +2436,14 @@ const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
                     )}
                   </div>
                   {cardDueDate && (
-                    <p className={`text-xs mt-2 ${
-                      new Date(cardDueDate) < new Date() ? 'text-red-400 font-semibold' : 'text-purple-300'
-                    }`}>
+                    <p className={`text-xs mt-2 ${new Date(cardDueDate) < new Date() ? 'text-red-400 font-semibold' : 'text-purple-300'
+                      }`}>
                       {new Date(cardDueDate) < new Date() && '⚠️ '}
                       {new Date(cardDueDate) < new Date() ? 'Due: ' : 'Due: '}
-                      {new Date(cardDueDate).toLocaleString('en-US', { 
-                        weekday: 'short', 
-                        year: 'numeric', 
-                        month: 'short', 
+                      {new Date(cardDueDate).toLocaleString('en-US', {
+                        weekday: 'short',
+                        year: 'numeric',
+                        month: 'short',
                         day: 'numeric',
                         hour: 'numeric',
                         minute: '2-digit'
@@ -2466,8 +2476,8 @@ const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
                           <div className="flex items-center gap-1.5">
                             {cardDueDate ? (
                               <div className="text-xs text-purple-300 bg-purple-500/20 px-2 py-1 rounded">
-                                {new Date(cardDueDate).toLocaleString('en-US', { 
-                                  month: 'short', 
+                                {new Date(cardDueDate).toLocaleString('en-US', {
+                                  month: 'short',
                                   day: 'numeric',
                                   hour: 'numeric',
                                   minute: '2-digit'
@@ -2637,27 +2647,27 @@ const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
               >
                 Cancel
               </Button>
-             <Button
-              onClick={handleSave}
-              className="gradient-primary px-4 py-1.5 hover-glow text-xs compact-button relative"
-              disabled={isUploading}
-            >
-              {isUploading ? (
-                <>
-                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1.5"></div>
-                  Uploading...
-                </>
-              ) : (
-                <>
-                  {card.id === 'temp-new-card' ? 'Create Card' : 'Save Changes'}
-                  {attachments.length > 0 && !isUploading && (
-                    <span className="ml-1.5 bg-white/20 rounded-full px-1.5 py-0.5 text-[10px]">
-                      {attachments.length} file{attachments.length > 1 ? 's' : ''}
-                    </span>
-                  )}
-                </>
-              )}
-            </Button>
+              <Button
+                onClick={handleSave}
+                className="gradient-primary px-4 py-1.5 hover-glow text-xs compact-button relative"
+                disabled={isUploading}
+              >
+                {isUploading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1.5"></div>
+                    Uploading...
+                  </>
+                ) : (
+                  <>
+                    {card.id === 'temp-new-card' ? 'Create Card' : 'Save Changes'}
+                    {attachments.length > 0 && !isUploading && (
+                      <span className="ml-1.5 bg-white/20 rounded-full px-1.5 py-0.5 text-[10px]">
+                        {attachments.length} file{attachments.length > 1 ? 's' : ''}
+                      </span>
+                    )}
+                  </>
+                )}
+              </Button>
             </div>
           </div>
         </div>
@@ -2674,13 +2684,13 @@ const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
   };
 
   // Compact Card Footer Component
-  const CompactCardFooter = ({ 
-    card, 
-    onViewComments, 
+  const CompactCardFooter = ({
+    card,
+    onViewComments,
     onDownloadAttachment,
     onViewDescription
-  }: { 
-    card: CardType; 
+  }: {
+    card: CardType;
     onViewComments?: (e: React.MouseEvent) => void;
     onDownloadAttachment?: (attachmentName: string, e: React.MouseEvent) => void;
     onViewDescription?: (e: React.MouseEvent) => void;
@@ -2707,7 +2717,7 @@ const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
                 const diffDays = Math.ceil((deadlineDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
                 return diffDays <= 3 && diffDays >= 0;
               })();
-              
+
               return (
                 <div key={idx} className="relative">
                   <Avatar className={`w-5 h-5 border-2 ${isUrgent ? 'border-red-500' : 'border-slate-900'} hover:scale-110 smooth-transition`}>
@@ -2741,8 +2751,8 @@ const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
             >
               <Calendar className="w-2.5 h-2.5" />
               <span className="text-[9px] font-medium">
-                {new Date(card.dueDate).toLocaleString('en-US', { 
-                  month: 'short', 
+                {new Date(card.dueDate).toLocaleString('en-US', {
+                  month: 'short',
                   day: 'numeric',
                   hour: 'numeric',
                   minute: '2-digit'
@@ -2795,8 +2805,8 @@ const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
                   <span className="text-[9px] font-medium">{card.attachments.length}</span>
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent 
-                className="glass-strong w-40 border-white/10" 
+              <DropdownMenuContent
+                className="glass-strong w-40 border-white/10"
                 align="end"
                 onClick={(e) => e.stopPropagation()}
               >
@@ -2830,13 +2840,13 @@ const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
   };
 
   // KanbanCard Component
-  const KanbanCard = ({ 
-    card, 
-    onClick, 
-    onDelete, 
-    onViewComments, 
-    onDownloadAttachment, 
-    onViewDescription 
+  const KanbanCard = ({
+    card,
+    onClick,
+    onDelete,
+    onViewComments,
+    onDownloadAttachment,
+    onViewDescription
   }: KanbanCardProps) => {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
       id: `card-${card.id}`,
@@ -2855,17 +2865,16 @@ const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         style={style}
         {...attributes}
         {...listeners}
-        className={`compact-card glass rounded-xl hover-glow cursor-grab active:cursor-grabbing card-hover group smooth-transition drag-transition ${
-          isDragging ? 'drag-preview' : ''
-        }`}
+        className={`compact-card glass rounded-xl hover-glow cursor-grab active:cursor-grabbing card-hover group smooth-transition drag-transition ${isDragging ? 'drag-preview' : ''
+          }`}
         onClick={onClick}
       >
         {/* Card Labels */}
         {card.labels.length > 0 && (
           <div className="flex flex-wrap gap-1 mb-2">
             {card.labels.slice(0, 2).map((label) => (
-              <Badge 
-                key={label} 
+              <Badge
+                key={label}
                 className="px-1.5 py-0.5 text-[9px] gradient-primary text-white truncate max-w-16 font-medium"
               >
                 {label}
@@ -2885,8 +2894,8 @@ const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         </h4>
 
         {/* Compact Card Footer */}
-        <CompactCardFooter 
-          card={card} 
+        <CompactCardFooter
+          card={card}
           onViewComments={onViewComments}
           onDownloadAttachment={onDownloadAttachment}
           onViewDescription={onViewDescription}
@@ -2896,9 +2905,9 @@ const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 smooth-transition">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button 
-                variant="ghost" 
-                size="sm" 
+              <Button
+                variant="ghost"
+                size="sm"
                 className="h-6 w-6 p-0 glass hover-glow"
                 onClick={(e) => e.stopPropagation()}
               >
@@ -2906,15 +2915,15 @@ const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="glass-strong w-32 border-white/10" align="end">
-              <DropdownMenuItem 
+              <DropdownMenuItem
                 onClick={(e) => { e.stopPropagation(); onClick(); }}
                 className="smooth-transition cursor-pointer hover:bg-white/10 text-xs"
               >
                 <Pencil className="w-3 h-3 mr-1.5" />
                 Edit
               </DropdownMenuItem>
-              <DropdownMenuItem 
-                onClick={(e) => { e.stopPropagation(); onDelete(); }} 
+              <DropdownMenuItem
+                onClick={(e) => { e.stopPropagation(); onDelete(); }}
                 className="text-red-400 smooth-transition cursor-pointer hover:bg-red-500/20 text-xs"
               >
                 <Trash2 className="w-3 h-3 mr-1.5" />
@@ -2992,9 +3001,8 @@ const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
       <div
         ref={setNodeRef}
         style={style}
-        className={`flex-shrink-0 ${isMobile ? 'w-64' : 'w-72'} glass-strong rounded-xl p-3 compact-list flex flex-col h-full smooth-transition drag-transition ${
-          isDragging ? 'list-drag-preview' : ''
-        }`}
+        className={`flex-shrink-0 ${isMobile ? 'w-64' : 'w-72'} glass-strong rounded-xl p-3 compact-list flex flex-col h-full smooth-transition drag-transition ${isDragging ? 'list-drag-preview' : ''
+          }`}
       >
         {/* Enhanced List Header */}
         <div className="flex items-center justify-between mb-3">
@@ -3013,7 +3021,7 @@ const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
               />
             ) : (
               <div className="flex items-center gap-1.5">
-                <h3 
+                <h3
                   className="font-bold text-base cursor-grab flex-1 truncate group-hover:text-white smooth-transition"
                   {...attributes}
                   {...listeners}
@@ -3034,8 +3042,8 @@ const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
                   <MoreVertical className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent 
-                className="glass-strong border-white/15 w-56 backdrop-blur-xl shadow-2xl" 
+              <DropdownMenuContent
+                className="glass-strong border-white/15 w-56 backdrop-blur-xl shadow-2xl"
                 align="end"
                 sideOffset={5}
               >
@@ -3047,7 +3055,7 @@ const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
 
                 <div className="p-1.5 space-y-0.5">
                   {/* Rename List */}
-                  <DropdownMenuItem 
+                  <DropdownMenuItem
                     onClick={() => handleMenuAction(() => onStartEdit(list.id, list.title))}
                     className="flex items-center gap-2 px-2 py-2 rounded-md cursor-pointer transition-all duration-200 hover:bg-white/10 hover:scale-[1.02] group"
                   >
@@ -3056,67 +3064,67 @@ const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
                     </div>
                     <span className="text-xs font-medium">Rename List</span>
                   </DropdownMenuItem>
-                
-                {/* Move All Cards Section */}
-                {list.cards.length > 0 && otherLists.length > 0 && (
-                  <div className="space-y-0.5">
-                    {/* Move All Toggle */}
-                    <DropdownMenuItem 
-                      onSelect={handleMoveAllToggle}
-                      className="flex items-center gap-2 px-2 py-2 rounded-md cursor-pointer transition-all duration-200 hover:bg-white/10 hover:scale-[1.02] group"
-                    >
-                      <div className="w-6 h-6 rounded-lg bg-indigo-500/20 flex items-center justify-center group-hover:bg-indigo-500/30 transition-colors">
-                        <Move className="w-3 h-3 text-indigo-300" />
-                      </div>
-                      <span className="text-xs font-medium">Move All Cards</span>
-                      <div className="ml-auto flex items-center gap-1">
-                        <span className="text-xs text-blue-400 bg-white/5 px-1.5 py-0.5 rounded">
-                          {list.cards.length}
-                        </span>
-                        <ChevronDown className={`w-3 h-3 text-blue-400 transition-transform duration-200 ${showMoveAllOptions ? 'rotate-180' : ''}`} />
-                      </div>
-                    </DropdownMenuItem>
-                    
-                    {/* Move All Options */}
-                    {showMoveAllOptions && (
-                      <div className="ml-6 mt-1 space-y-1 animate-slide-in">
-                        <div className="text-[10px] font-semibold text-blue-400 uppercase tracking-wide px-2">
-                          Move to:
+
+                  {/* Move All Cards Section */}
+                  {list.cards.length > 0 && otherLists.length > 0 && (
+                    <div className="space-y-0.5">
+                      {/* Move All Toggle */}
+                      <DropdownMenuItem
+                        onSelect={handleMoveAllToggle}
+                        className="flex items-center gap-2 px-2 py-2 rounded-md cursor-pointer transition-all duration-200 hover:bg-white/10 hover:scale-[1.02] group"
+                      >
+                        <div className="w-6 h-6 rounded-lg bg-indigo-500/20 flex items-center justify-center group-hover:bg-indigo-500/30 transition-colors">
+                          <Move className="w-3 h-3 text-indigo-300" />
                         </div>
-                        <div className="max-h-40 overflow-y-auto custom-scrollbar-vertical space-y-0.5 pr-1">
-                          {otherLists.map((targetList) => (
-                            <button
-                              key={targetList.id}
-                              onClick={() => handleMoveAllCards(targetList.id)}
-                              className="w-full flex items-center gap-2 px-2 py-2 rounded-md text-xs transition-all duration-200 hover:bg-white/10 hover:translate-x-1 group"
-                            >
-                              <div className="w-4 h-4 rounded bg-emerald-500/20 flex items-center justify-center group-hover:bg-emerald-500/30 transition-colors">
-                                <Move className="w-2 h-2 text-emerald-300" />
-                              </div>
-                              <span className="flex-1 text-left truncate font-medium">{targetList.title}</span>
-                              <span className="text-[10px] text-blue-400 bg-white/5 px-1.5 py-0.5 rounded min-w-6 text-center shrink-0">
-                                {targetList.cards.length}
-                              </span>
-                            </button>
-                          ))}
+                        <span className="text-xs font-medium">Move All Cards</span>
+                        <div className="ml-auto flex items-center gap-1">
+                          <span className="text-xs text-blue-400 bg-white/5 px-1.5 py-0.5 rounded">
+                            {list.cards.length}
+                          </span>
+                          <ChevronDown className={`w-3 h-3 text-blue-400 transition-transform duration-200 ${showMoveAllOptions ? 'rotate-180' : ''}`} />
                         </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-                
-                {/* Delete List - Separated with border */}
-                <div className="pt-1 mt-1 border-t border-white/10">
-                  <DropdownMenuItem 
-                    onClick={() => handleMenuAction(() => onDelete(list.id))} 
-                    className="flex items-center gap-2 px-2 py-2 rounded-md cursor-pointer transition-all duration-200 hover:bg-red-500/20 hover:scale-[1.02] group text-red-400"
-                  >
-                    <div className="w-6 h-6 rounded-lg bg-red-500/20 flex items-center justify-center group-hover:bg-red-500/30 transition-colors">
-                      <Trash2 className="w-3 h-3 text-red-400" />
+                      </DropdownMenuItem>
+
+                      {/* Move All Options */}
+                      {showMoveAllOptions && (
+                        <div className="ml-6 mt-1 space-y-1 animate-slide-in">
+                          <div className="text-[10px] font-semibold text-blue-400 uppercase tracking-wide px-2">
+                            Move to:
+                          </div>
+                          <div className="max-h-40 overflow-y-auto custom-scrollbar-vertical space-y-0.5 pr-1">
+                            {otherLists.map((targetList) => (
+                              <button
+                                key={targetList.id}
+                                onClick={() => handleMoveAllCards(targetList.id)}
+                                className="w-full flex items-center gap-2 px-2 py-2 rounded-md text-xs transition-all duration-200 hover:bg-white/10 hover:translate-x-1 group"
+                              >
+                                <div className="w-4 h-4 rounded bg-emerald-500/20 flex items-center justify-center group-hover:bg-emerald-500/30 transition-colors">
+                                  <Move className="w-2 h-2 text-emerald-300" />
+                                </div>
+                                <span className="flex-1 text-left truncate font-medium">{targetList.title}</span>
+                                <span className="text-[10px] text-blue-400 bg-white/5 px-1.5 py-0.5 rounded min-w-6 text-center shrink-0">
+                                  {targetList.cards.length}
+                                </span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
-                    <span className="text-xs font-medium">Delete List</span>
-                  </DropdownMenuItem>
-                </div>
+                  )}
+
+                  {/* Delete List - Separated with border */}
+                  <div className="pt-1 mt-1 border-t border-white/10">
+                    <DropdownMenuItem
+                      onClick={() => handleMenuAction(() => onDelete(list.id))}
+                      className="flex items-center gap-2 px-2 py-2 rounded-md cursor-pointer transition-all duration-200 hover:bg-red-500/20 hover:scale-[1.02] group text-red-400"
+                    >
+                      <div className="w-6 h-6 rounded-lg bg-red-500/20 flex items-center justify-center group-hover:bg-red-500/30 transition-colors">
+                        <Trash2 className="w-3 h-3 text-red-400" />
+                      </div>
+                      <span className="text-xs font-medium">Delete List</span>
+                    </DropdownMenuItem>
+                  </div>
                 </div>
 
                 {/* Footer */}
@@ -3131,7 +3139,7 @@ const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         </div>
 
         {/* Cards Area */}
-        <div 
+        <div
           className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar-vertical pr-0.5 min-h-0"
         >
           <SortableContext
@@ -3179,20 +3187,20 @@ const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
             <Menu className="w-5 h-5" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent 
-          className="glass-strong mb-4 mr-4 w-40 border-white/10" 
+        <DropdownMenuContent
+          className="glass-strong mb-4 mr-4 w-40 border-white/10"
           align="end"
           side="top"
         >
-          <DropdownMenuItem 
-            onClick={onShare} 
+          <DropdownMenuItem
+            onClick={onShare}
             className="flex items-center gap-2 py-2 smooth-transition cursor-pointer hover:bg-white/10 text-xs"
           >
             <Share2 className="w-3.5 h-3.5" />
             Share Board
           </DropdownMenuItem>
-          <DropdownMenuItem 
-            onClick={onAddList} 
+          <DropdownMenuItem
+            onClick={onAddList}
             className="flex items-center gap-2 py-2 smooth-transition cursor-pointer hover:bg-white/10 text-xs"
           >
             <Plus className="w-3.5 h-3.5" />
@@ -3204,21 +3212,21 @@ const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
   );
 
   // Confirm Dialog Component
-  const ConfirmDialog = ({ 
-    isOpen, 
-    onClose, 
-    onConfirm, 
-    title, 
-    description 
-  }: { 
-    isOpen: boolean; 
-    onClose: () => void; 
-    onConfirm: () => void; 
-    title: string; 
-    description: string; 
+  const ConfirmDialog = ({
+    isOpen,
+    onClose,
+    onConfirm,
+    title,
+    description
+  }: {
+    isOpen: boolean;
+    onClose: () => void;
+    onConfirm: () => void;
+    title: string;
+    description: string;
   }) => {
     if (!isOpen) return null;
-    
+
     return (
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
         <div className="glass-strong rounded-xl p-4 max-w-md w-full mx-4">
@@ -3261,18 +3269,18 @@ const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [boardDeadline, setBoardDeadline] = useState<string>(() => {
-  if (board?.dueDate) {
-    const date = new Date(board.dueDate);
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    return `${year}-${month}-${day}T${hours}:${minutes}`;
-  }
-  return '';
-});
-  
+    if (board?.dueDate) {
+      const date = new Date(board.dueDate);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      return `${year}-${month}-${day}T${hours}:${minutes}`;
+    }
+    return '';
+  });
+
   // FIXED: Theme state - better initialization
   const [currentTheme, setCurrentTheme] = useState<ThemeOption>('default');
 
@@ -3317,12 +3325,12 @@ const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
       setBoard(null);
       return;
     }
-    
+
     const found = boards?.find((b) => b.id === boardId);
     if (found) {
       setBoard(found);
       setBoardTitle(found.title || 'Untitled Board');
-      
+
       // ✅ FIXED: Format ISO string to local datetime-local format (YYYY-MM-DDTHH:mm)
       if (found.dueDate) {
         const date = new Date(found.dueDate);
@@ -3400,7 +3408,7 @@ const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
   // Handler functions
   const handleSaveTitle = useCallback(async () => {
     if (!boardId || !boardTitle.trim() || !board) return;
-    
+
     try {
       await updateBoard(boardId, { title: boardTitle });
       await logActivity(boardId, 'board_title_updated', {
@@ -3415,127 +3423,127 @@ const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     }
   }, [boardId, boardTitle, updateBoard, board]);
 
-const handleSaveBoardDeadline = useCallback(async () => {
-  if (!boardId || !board) return;
+  const handleSaveBoardDeadline = useCallback(async () => {
+    if (!boardId || !board) return;
 
-  try {
-    // ✅ FIXED: Convert local datetime-local string to proper ISO string with UTC for database
-    const isoDeadline = boardDeadline ? new Date(boardDeadline).toISOString() : '';
-    
-    await updateBoard(boardId, { dueDate: isoDeadline } as any);
-    
-    // Log activity
-    await logActivity(boardId, 'board_deadline_updated', {
-      deadline: boardDeadline
-    });
+    try {
+      // ✅ FIXED: Convert local datetime-local string to proper ISO string with UTC for database
+      const isoDeadline = boardDeadline ? new Date(boardDeadline).toISOString() : '';
 
-    // Push deadline to all member Google Calendars
-    const isGoogleUser = user?.authProvider === 'google';
-    
-    if (boardDeadline && (board?.members?.length || isGoogleUser)) {
-      try {
-        // FIXED: Get all member emails (including PM)
-        const allMembers = [...(board.members || [])];
-        const pmEmail = (board as any).userEmail || user?.email;
-        
-        // Add PM if not in members list
-        if (pmEmail && !allMembers.some(m => m.email === pmEmail)) {
-          allMembers.push({ email: pmEmail, role: 'manager' });
-        }
+      await updateBoard(boardId, { dueDate: isoDeadline } as any);
 
-        // Ensure current user is included if they are a google user
-        if (isGoogleUser && user?.email && !allMembers.some(m => m.email === user.email)) {
-          allMembers.push({ email: user.email, role: 'member' });
-        }
-        
-        const memberEmails = [...new Set(allMembers.map(m => m.email))];
-        
-        // FIXED: Create ONE calendar event for the board
-        const eventTitle = `${boardTitle} - Project Deadline`;
-        const eventDescription = `Project "${boardTitle}" is due on ${new Date(boardDeadline).toLocaleString()}.`;
-        
-        const eventId = await addEventToGoogleCalendar({
-          title: eventTitle,
-          description: eventDescription,
-          dueDate: boardDeadline,
-          assignedMembers: memberEmails, // Add to all members' calendars
-        });
-        
-        if (eventId) {
-          // Store event ID on board for future updates
-          await updateBoard(boardId, { googleEventId: eventId } as any);
-          toast.success(`Board deadline added to team members' calendars ✅`);
-        } else {
-          toast.warning("Board saved, but failed to sync with Google Calendar.");
-        }
+      // Log activity
+      await logActivity(boardId, 'board_deadline_updated', {
+        deadline: boardDeadline
+      });
 
-        // FIXED: Send notifications to ALL members with clear message
-        for (const member of allMembers) {
-          await sendNotification(
-            member.email,
-            'board_deadline',
-            {
-              boardTitle: board.title,
-              boardId: board.id,
-              message: `Project deadline set for ${new Date(boardDeadline).toLocaleString()}. The project "${boardTitle}" must be completed by this date.`
-            }
-          );
-          
-          // Send email notification
-          try {
-            await axios.post(`${API_URL}/api/send-email`, {
-              to: member.email,
-              subject: `Project Deadline: ${boardTitle}`,
-              html: `
+      // Push deadline to all member Google Calendars
+      const isGoogleUser = user?.authProvider === 'google';
+
+      if (boardDeadline && (board?.members?.length || isGoogleUser)) {
+        try {
+          // FIXED: Get all member emails (including PM)
+          const allMembers = [...(board.members || [])];
+          const pmEmail = (board as any).userEmail || user?.email;
+
+          // Add PM if not in members list
+          if (pmEmail && !allMembers.some(m => m.email === pmEmail)) {
+            allMembers.push({ email: pmEmail, role: 'manager' });
+          }
+
+          // Ensure current user is included if they are a google user
+          if (isGoogleUser && user?.email && !allMembers.some(m => m.email === user.email)) {
+            allMembers.push({ email: user.email, role: 'member' });
+          }
+
+          const memberEmails = [...new Set(allMembers.map(m => m.email))];
+
+          // FIXED: Create ONE calendar event for the board
+          const eventTitle = `${boardTitle} - Project Deadline`;
+          const eventDescription = `Project "${boardTitle}" is due on ${new Date(boardDeadline).toLocaleString()}.`;
+
+          const eventId = await addEventToGoogleCalendar({
+            title: eventTitle,
+            description: eventDescription,
+            dueDate: boardDeadline,
+            assignedMembers: memberEmails, // Add to all members' calendars
+          });
+
+          if (eventId) {
+            // Store event ID on board for future updates
+            await updateBoard(boardId, { googleEventId: eventId } as any);
+            toast.success(`Board deadline added to team members' calendars ✅`);
+          } else {
+            toast.warning("Board saved, but failed to sync with Google Calendar.");
+          }
+
+          // FIXED: Send notifications to ALL members with clear message
+          for (const member of allMembers) {
+            await sendNotification(
+              member.email,
+              'board_deadline',
+              {
+                boardTitle: board.title,
+                boardId: board.id,
+                message: `Project deadline set for ${new Date(boardDeadline).toLocaleString()}. The project "${boardTitle}" must be completed by this date.`
+              }
+            );
+
+            // Send email notification
+            try {
+              await axios.post(`${API_URL}/api/send-email`, {
+                to: member.email,
+                subject: `Project Deadline: ${boardTitle}`,
+                html: `
                 <h2>Project Deadline Alert</h2>
                 <p>The project <strong>${boardTitle}</strong> has a deadline set for:</p>
                 <h3>${new Date(boardDeadline).toLocaleString()}</h3>
                 <p>All team members are expected to complete their tasks by this date.</p>
                 <a href="${window.location.origin}/board/${boardId}">View Board</a>
               `
+              });
+            } catch (emailErr) {
+              console.error('Failed to send email notification:', emailErr);
+            }
+          }
+        } catch (err: any) {
+          console.error('Failed to add board deadline to Google Calendar', err);
+          // Standardize error check for both string and object formats
+          const errorMsg = typeof err === 'string' ? err : err?.error || err?.message || '';
+
+          // Use a unique toast ID to avoid duplicates and ensure it's visible
+          const toastId = `google-sync-cancel-${Date.now()}`;
+
+          if (errorMsg === 'popup_closed' || errorMsg.includes('popup_closed')) {
+            toast.error('Google Calendar sync cancelled. Board saved, but not synced to Calendar.', {
+              duration: 6000,
+              id: toastId
             });
-          } catch (emailErr) {
-            console.error('Failed to send email notification:', emailErr);
+          } else {
+            toast.warning('Board deadline updated but failed to sync to Google Calendar');
           }
         }
-      } catch (err: any) {
-        console.error('Failed to add board deadline to Google Calendar', err);
-        // Standardize error check for both string and object formats
-        const errorMsg = typeof err === 'string' ? err : err?.error || err?.message || '';
-        
-        // Use a unique toast ID to avoid duplicates and ensure it's visible
-        const toastId = `google-sync-cancel-${Date.now()}`;
-        
-        if (errorMsg === 'popup_closed' || errorMsg.includes('popup_closed')) {
-          toast.error('Google Calendar sync cancelled. Board saved, but not synced to Calendar.', {
-            duration: 6000,
-            id: toastId
-          });
-        } else {
-          toast.warning('Board deadline updated but failed to sync to Google Calendar');
+      } else if (!boardDeadline && (board as any).googleEventId) {
+        // CASE: Deadline removed
+        try {
+          await deleteGoogleCalendarEvent((board as any).googleEventId);
+          await updateBoard(boardId, { googleEventId: '' } as any);
+          toast.success("Board deadline removed from Google Calendar 🗑️");
+        } catch (err) {
+          console.error('Failed to remove board deadline from Google Calendar', err);
         }
+      } else {
+        toast.success('Board deadline updated');
       }
-    } else if (!boardDeadline && (board as any).googleEventId) {
-      // CASE: Deadline removed
-      try {
-        await deleteGoogleCalendarEvent((board as any).googleEventId);
-        await updateBoard(boardId, { googleEventId: '' } as any);
-        toast.success("Board deadline removed from Google Calendar 🗑️");
-      } catch (err) {
-        console.error('Failed to remove board deadline from Google Calendar', err);
-      }
-    } else {
-      toast.success('Board deadline updated');
+    } catch (error) {
+      console.error('Error saving deadline:', error);
+      toast.error('Failed to save deadline');
     }
-  } catch (error) {
-    console.error('Error saving deadline:', error);
-    toast.error('Failed to save deadline');
-  }
-}, [boardId, boardDeadline, updateBoard, board, boardTitle]);
+  }, [boardId, boardDeadline, updateBoard, board, boardTitle]);
 
   const handleAddList = useCallback(async () => {
     if (!boardId || !newListTitle.trim() || !board) return;
-    
+
     try {
       await addList(boardId, newListTitle.trim());
       await logActivity(boardId, 'list_created', {
@@ -3552,7 +3560,7 @@ const handleSaveBoardDeadline = useCallback(async () => {
 
   const handleRenameList = useCallback(async (listId: string) => {
     if (!boardId || !editingListTitle.trim() || !board) return;
-    
+
     try {
       const list = board.lists.find(l => l.id === listId);
       if (list) {
@@ -3573,7 +3581,7 @@ const handleSaveBoardDeadline = useCallback(async () => {
 
   const handleDeleteList = useCallback(async () => {
     if (!boardId || deleteConfirm?.type !== 'list' || !board) return;
-    
+
     try {
       const list = board.lists.find(l => l.id === deleteConfirm.id);
       if (list) {
@@ -3645,7 +3653,7 @@ const handleSaveBoardDeadline = useCallback(async () => {
         // CASE 2: Sync if due date is set (or updated) AND (either members are assigned OR current user is a Google user)
         if (cardDueDate && (cardAssignedMembers.length > 0 || isGoogleUser)) {
           const parsedDate = new Date(cardDueDate as any);
-          
+
           // Determine who gets the calendar invite
           const targetMembers = [...cardAssignedMembers];
           if (isGoogleUser && user?.email && !targetMembers.includes(user.email)) {
@@ -3656,11 +3664,11 @@ const handleSaveBoardDeadline = useCallback(async () => {
             if (cardGoogleEventId) {
               await updateGoogleCalendarEvent(
                 cardGoogleEventId,
-                { 
-                  title: cardTitle ?? "", 
-                  description: cardDesc, 
-                  dueDate: parsedDate, 
-                  assignedMembers: targetMembers 
+                {
+                  title: cardTitle ?? "",
+                  description: cardDesc,
+                  dueDate: parsedDate,
+                  assignedMembers: targetMembers
                 }
               );
               toast.success("Google Calendar event updated ✅");
@@ -3683,7 +3691,7 @@ const handleSaveBoardDeadline = useCallback(async () => {
             console.error("❌ Calendar sync error:", syncErr);
             const errorMsg = typeof syncErr === 'string' ? syncErr : syncErr?.error || syncErr?.message || '';
             const toastId = `google-sync-cancel-${Date.now()}`;
-            
+
             if (errorMsg === 'popup_closed' || errorMsg.includes('popup_closed')) {
               toast.error("Google sync cancelled. Card saved, but not synced to Calendar.", {
                 duration: 6000,
@@ -3709,11 +3717,11 @@ const handleSaveBoardDeadline = useCallback(async () => {
 
   const handleDeleteCard = useCallback(async () => {
     if (!boardId || deleteConfirm?.type !== 'card' || !deleteConfirm.listId || !board) return;
-    
+
     try {
       const list = board.lists.find(l => l.id === deleteConfirm.listId);
       const card = list?.cards.find(c => c.id === deleteConfirm.id);
-      
+
       if (card) {
         await deleteCard(boardId, deleteConfirm.listId, deleteConfirm.id);
         await logActivity(boardId, 'card_deleted', {
@@ -3733,16 +3741,32 @@ const handleSaveBoardDeadline = useCallback(async () => {
 
   const handleRemoveMember = useCallback(async () => {
     if (!boardId || deleteConfirm?.type !== 'member' || !deleteConfirm.memberEmail || !board) return;
-    
+
     try {
       const updatedMembers = board.members.filter((m) => m.email !== deleteConfirm.memberEmail);
       await updateBoard(boardId, { members: updatedMembers });
-      
+
       await logActivity(boardId, 'member_removed', {
         memberEmail: deleteConfirm.memberEmail
       });
-      
-      toast.success('Member removed');
+
+      const storedUser = JSON.parse(localStorage.getItem("user") || "null");
+      const senderFullName = storedUser?.firstName && storedUser?.lastName
+        ? `${storedUser.firstName} ${storedUser.lastName}`
+        : storedUser?.email || "Board Admin";
+
+      await sendNotification(
+        deleteConfirm.memberEmail,
+        'board_removed',
+        {
+          boardTitle: board.title,
+          boardId: board.id,
+          senderName: senderFullName,
+          message: `You have been removed from the board "${board.title}" by ${senderFullName}.`
+        }
+      );
+
+      toast.success('Member removed and notified');
       setDeleteConfirm(null);
     } catch (error) {
       console.error('Error removing member:', error);
@@ -3784,7 +3808,7 @@ const handleSaveBoardDeadline = useCallback(async () => {
   // Enhanced Move All Cards function
   const handleMoveAllCards = useCallback(async (sourceListId: string, targetListId: string) => {
     if (!boardId || !board) return;
-    
+
     const sourceList = board.lists.find(l => l.id === sourceListId);
     if (!sourceList || sourceList.cards.length === 0) return;
 
@@ -3793,15 +3817,15 @@ const handleSaveBoardDeadline = useCallback(async () => {
 
     // Create a copy of cards to move
     const cardsToMove = [...sourceList.cards];
-    
+
     // Move cards one by one with proper error handling
     let movedCount = 0;
-    
+
     for (const card of cardsToMove) {
       try {
         await moveCard(boardId, card.id, sourceListId, targetListId, 0);
         movedCount++;
-        
+
         // Small delay to prevent overwhelming the server
         await new Promise(resolve => setTimeout(resolve, 50));
       } catch (error) {
@@ -3844,21 +3868,21 @@ const handleSaveBoardDeadline = useCallback(async () => {
 
       if (oldIndex !== newIndex) {
         const newLists = arrayMove(board.lists, oldIndex, newIndex);
-        
+
         try {
           // ✅ FIX: Just use context's reorderLists - it handles BOTH state AND API
           // REMOVED: The duplicate axios.put call that was here
           await reorderLists(boardId, newLists);
-          
+
           toast.success(`List moved to position ${newIndex + 1}`);
         } catch (error: any) {
           console.error('Failed to save list order:', error);
-          
-          const errorMessage = error.response?.data?.message || 
-                            error.response?.data?.error ||
-                            error.message ||
-                            'Failed to save list position';
-          
+
+          const errorMessage = error.response?.data?.message ||
+            error.response?.data?.error ||
+            error.message ||
+            'Failed to save list position';
+
           toast.error(`Failed to save: ${errorMessage}`);
         }
       }
@@ -3868,7 +3892,7 @@ const handleSaveBoardDeadline = useCallback(async () => {
     // Handle card movement
     if (activeId.startsWith('card-')) {
       const cardId = activeId.replace('card-', '');
-      
+
       const sourceList = board.lists.find((l) => l.cards.some((c) => c.id === cardId));
       const sourceCard = sourceList?.cards.find((c) => c.id === cardId);
 
@@ -3886,12 +3910,12 @@ const handleSaveBoardDeadline = useCallback(async () => {
       } else if (overId.startsWith('card-')) {
         const overCardId = overId.replace('card-', '');
         const targetList = board.lists.find((l) => l.cards.some((c) => c.id === overCardId));
-        
+
         if (!targetList || !targetList.id) {
           toast.error('Unable to move card: target list not found');
           return;
         }
-        
+
         targetListId = targetList.id;
         targetIndex = targetList.cards.findIndex((c) => c.id === overCardId);
       } else {
@@ -3900,15 +3924,15 @@ const handleSaveBoardDeadline = useCallback(async () => {
 
       try {
         await moveCard(boardId, cardId, sourceList.id, targetListId, targetIndex);
-        
+
         const targetList = board.lists.find((l) => l.id === targetListId);
-        
+
         await logActivity(board.id, 'card_moved', {
           cardTitle: sourceCard.title,
           fromList: sourceList.title,
           toList: targetList?.title
         });
-        
+
         toast.success(`Card moved to "${targetList?.title}"`);
       } catch (error) {
         console.error('❌ Failed to move card:', error);
@@ -3919,8 +3943,8 @@ const handleSaveBoardDeadline = useCallback(async () => {
 
   const activeCard = activeId?.startsWith('card-') && board
     ? board.lists
-        .flatMap((l) => l.cards.map((c) => ({ ...c, listId: l.id })))
-        .find((c) => `card-${c.id}` === activeId)
+      .flatMap((l) => l.cards.map((c) => ({ ...c, listId: l.id })))
+      .find((c) => `card-${c.id}` === activeId)
     : null;
 
   const getConfirmDialogProps = () => {
@@ -3955,9 +3979,9 @@ const handleSaveBoardDeadline = useCallback(async () => {
       toast.error('Board not found');
       return;
     }
-    
+
     setCurrentTheme(theme);
-    
+
     // Map theme to database color value
     const colorMap: Record<ThemeOption, string> = {
       'default': 'from-slate-900 via-purple-900 to-slate-900',
@@ -3969,9 +3993,9 @@ const handleSaveBoardDeadline = useCallback(async () => {
       'orange': 'from-slate-900 via-orange-900 to-slate-900',
       'teal': 'from-slate-900 via-teal-900 to-slate-900',
     };
-    
+
     const color = colorMap[theme];
-    
+
     try {
       await updateBoard(boardId, { color } as any);
       await logActivity(boardId, 'theme_changed', {
@@ -3982,8 +4006,8 @@ const handleSaveBoardDeadline = useCallback(async () => {
       console.error('Failed to save theme:', error);
       toast.error('Failed to save theme');
       // Revert theme on error
-      setCurrentTheme(board.color ? 
-        Object.entries(colorMap).find(([_, c]) => c === board.color)?.[0] as ThemeOption || 'default' 
+      setCurrentTheme(board.color ?
+        Object.entries(colorMap).find(([_, c]) => c === board.color)?.[0] as ThemeOption || 'default'
         : 'default'
       );
     }
@@ -4019,13 +4043,13 @@ const handleSaveBoardDeadline = useCallback(async () => {
             {isOffline ? "Connection Error" : "Board not found"}
           </h1>
           <p className="text-sm mb-6 text-slate-400">
-            {isOffline 
+            {isOffline
               ? "Unable to load board data. Please check your internet connection and try again."
               : "The board you're looking for doesn't exist or you don't have permission to view it."}
           </p>
           <div className="flex flex-col gap-3">
             {isOffline ? (
-              <Button 
+              <Button
                 onClick={() => window.location.reload()}
                 className="gradient-primary hover-glow w-full smooth-transition compact-button"
               >
@@ -4033,7 +4057,7 @@ const handleSaveBoardDeadline = useCallback(async () => {
                 Retry Connection
               </Button>
             ) : (
-              <Button 
+              <Button
                 onClick={() => navigate('/dashboard')}
                 className="gradient-primary hover-glow w-full smooth-transition compact-button"
               >
@@ -4053,8 +4077,8 @@ const handleSaveBoardDeadline = useCallback(async () => {
         <div className="flex items-center justify-between max-w-full gap-2">
           {/* Left Section */}
           <div className="flex items-center gap-2 min-w-0 flex-1 max-w-[40%]">
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               size="sm"
               onClick={() => navigate('/dashboard')}
               className="h-8 px-2 glass hover-glow flex-shrink-0 smooth-transition group compact-button"
@@ -4076,11 +4100,10 @@ const handleSaveBoardDeadline = useCallback(async () => {
               />
             ) : (
               <h1
-                className={`text-base font-bold py-1.5 px-2 rounded-lg min-w-0 truncate flex-1 max-w-[180px] ${
-                  userCanEdit(board) 
-                    ? 'cursor-pointer hover:text-purple-300 transition-all hover:bg-white/5 smooth-transition' 
-                    : 'cursor-default'
-                }`}
+                className={`text-base font-bold py-1.5 px-2 rounded-lg min-w-0 truncate flex-1 max-w-[180px] ${userCanEdit(board)
+                  ? 'cursor-pointer hover:text-purple-300 transition-all hover:bg-white/5 smooth-transition'
+                  : 'cursor-default'
+                  }`}
                 onClick={() => userCanEdit(board) && setIsEditingTitle(true)}
                 role={userCanEdit(board) ? "button" : undefined}
                 tabIndex={userCanEdit(board) ? 0 : undefined}
@@ -4098,17 +4121,16 @@ const handleSaveBoardDeadline = useCallback(async () => {
             <Popover>
               <PopoverTrigger asChild>
                 <button
-                  className={`flex items-center gap-1.5 px-2 py-1 text-xs glass hover-glow rounded-lg smooth-transition compact-button ${
-                    boardDeadline && new Date(boardDeadline) < new Date() ? 'border border-red-500/50' : ''
-                  }`}
+                  className={`flex items-center gap-1.5 px-2 py-1 text-xs glass hover-glow rounded-lg smooth-transition compact-button ${boardDeadline && new Date(boardDeadline) < new Date() ? 'border border-red-500/50' : ''
+                    }`}
                   title={boardDeadline ? `Project deadline: ${new Date(boardDeadline).toLocaleString()}` : 'Set project deadline'}
                 >
                   <CalendarIcon className={`w-3 h-3 ${boardDeadline && new Date(boardDeadline) < new Date() ? 'text-red-400' : ''}`} />
                   {boardDeadline ? (
                     <>
                       <span className="hidden sm:inline">
-                        {new Date(boardDeadline).toLocaleString('en-US', { 
-                          month: 'short', 
+                        {new Date(boardDeadline).toLocaleString('en-US', {
+                          month: 'short',
                           day: 'numeric',
                           hour: 'numeric',
                           minute: '2-digit'
@@ -4171,12 +4193,12 @@ const handleSaveBoardDeadline = useCallback(async () => {
                       // Ensure PM is always in the members list for display
                       const pmEmail = (board as any).userEmail;
                       const displayMembers = [...board.members];
-                      
+
                       // Add PM if not already in members
                       if (pmEmail && !displayMembers.find(m => m.email === pmEmail)) {
                         displayMembers.unshift({ email: pmEmail, role: 'manager' as const });
                       }
-                      
+
                       return displayMembers.slice(0, 3).map((member, idx) => (
                         <Avatar key={idx} className="w-5 h-5 border-2 border-background group-hover:border-white/20 smooth-transition">
                           <AvatarFallback className="gradient-secondary text-[8px] text-white">
@@ -4210,7 +4232,7 @@ const handleSaveBoardDeadline = useCallback(async () => {
                     if (pmEmail && !allMembers.find(m => m.email === pmEmail)) {
                       allMembers.unshift({ email: pmEmail, role: 'manager' as const });
                     }
-                    
+
                     return allMembers.map((member, idx) => (
                       <div key={idx} className="flex items-center gap-2.5 px-2 py-2 rounded-md hover:bg-white/5 smooth-transition group/item">
                         <Avatar className="w-8 h-8 border border-white/10">
@@ -4226,13 +4248,12 @@ const handleSaveBoardDeadline = useCallback(async () => {
                             {member.email}
                           </p>
                         </div>
-                        <Badge className={`text-[9px] px-1.5 py-0 capitalize ${
-                          member.role === 'manager' || member.email === (board as any).userEmail
-                            ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' 
-                            : member.role === 'instructor'
+                        <Badge className={`text-[9px] px-1.5 py-0 capitalize ${member.role === 'manager' || member.email === (board as any).userEmail
+                          ? 'bg-amber-500/20 text-amber-400 border-amber-500/30'
+                          : member.role === 'instructor'
                             ? 'bg-purple-500/20 text-purple-400 border-purple-500/30'
                             : 'bg-blue-500/20 text-blue-400 border-blue-500/30'
-                        }`}>
+                          }`}>
                           {member.email === (board as any).userEmail ? 'Creator' : member.role || 'member'}
                         </Badge>
                       </div>
@@ -4240,9 +4261,9 @@ const handleSaveBoardDeadline = useCallback(async () => {
                   })()}
                 </div>
                 <div className="px-3 py-2 border-t border-white/10 text-center">
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     className="w-full h-7 text-[10px] text-blue-300 hover:text-white hover:bg-white/10 rounded-md smooth-transition"
                     onClick={() => setShowShareModal(true)}
                   >
@@ -4259,20 +4280,20 @@ const handleSaveBoardDeadline = useCallback(async () => {
                 size="sm"
                 onClick={async () => {
                   const newStatus = board.status === 'done' ? 'ongoing' : 'done';
-                  
+
                   try {
                     // Update in database first - this will update context state automatically
                     const updatedBoard = await updateBoard(boardId!, { status: newStatus });
-                    
+
                     // Log activity
                     await logActivity(boardId, 'board_status_changed', {
                       oldStatus: board.status,
                       newStatus: newStatus
                     });
-                    
+
                     // Don't manually set local state - context sync will handle it
                     // The useEffect that syncs from boards context will update local board state
-                    
+
                     if (newStatus === 'done') {
                       toast.success('🎉 Congratulations! Project marked as complete!', {
                         description: 'You have successfully completed this project. Great work!',
@@ -4286,11 +4307,10 @@ const handleSaveBoardDeadline = useCallback(async () => {
                     toast.error('Failed to update status');
                   }
                 }}
-                className={`h-8 px-2 text-xs smooth-transition ${
-                  board.status === 'done' 
-                    ? 'bg-green-600 hover:bg-green-700' 
-                    : 'glass hover-glow'
-                }`}
+                className={`h-8 px-2 text-xs smooth-transition ${board.status === 'done'
+                  ? 'bg-green-600 hover:bg-green-700'
+                  : 'glass hover-glow'
+                  }`}
               >
                 <CheckCircle className="w-3.5 h-3.5 mr-1" />
                 {board.status === 'done' ? 'Done' : 'Mark Done'}
@@ -4301,7 +4321,7 @@ const handleSaveBoardDeadline = useCallback(async () => {
             <ThemeSelector currentTheme={currentTheme} onThemeChange={handleThemeChange} />
 
             {/* Share Button */}
-            <Button 
+            <Button
               size="sm"
               className="gradient-primary hover-glow h-8 px-2 smooth-transition compact-button"
               onClick={() => setShowShareModal(true)}
@@ -4381,21 +4401,21 @@ const handleSaveBoardDeadline = useCallback(async () => {
                         autoFocus
                       />
                       <div className="flex gap-2">
-                       <Button 
-                      onClick={handleAddList} 
-                        size="sm" 
-                        className="gradient-primary h-8 flex-1 smooth-transition hover:scale-105 text-xs compact-button"
-                        disabled={!newListTitle.trim()} // Disabled when empty
-                      >
-                        <CheckCircle className="w-3.5 h-3.5 mr-1.5" />
-                        Add List
-                      </Button>
-                        <Button 
+                        <Button
+                          onClick={handleAddList}
+                          size="sm"
+                          className="gradient-primary h-8 flex-1 smooth-transition hover:scale-105 text-xs compact-button"
+                          disabled={!newListTitle.trim()} // Disabled when empty
+                        >
+                          <CheckCircle className="w-3.5 h-3.5 mr-1.5" />
+                          Add List
+                        </Button>
+                        <Button
                           onClick={() => {
                             setNewListTitle('');
                             setIsAddingList(false);
-                          }} 
-                          size="sm" 
+                          }}
+                          size="sm"
                           variant="ghost"
                           className="h-8 glass smooth-transition compact-button"
                         >
@@ -4423,7 +4443,7 @@ const handleSaveBoardDeadline = useCallback(async () => {
           </div>
 
           {/* Mobile Menu */}
-          <MobileMenu 
+          <MobileMenu
             onShare={() => setShowShareModal(true)}
             onAddList={() => {
               setNewListTitle('');
@@ -4437,8 +4457,8 @@ const handleSaveBoardDeadline = useCallback(async () => {
             {activeCard && (
               <div className={`compact-card glass shadow-2xl opacity-90 transform rotate-3 scale-105 ${isMobile ? 'w-64' : 'w-72'} smooth-transition drag-transition drag-preview`}>
                 <h4 className="font-semibold text-xs mb-1.5 line-clamp-2">{activeCard.title}</h4>
-                <CompactCardFooter 
-                  card={activeCard} 
+                <CompactCardFooter
+                  card={activeCard}
                   onViewComments={(e) => handleViewComments(activeCard, e)}
                   onDownloadAttachment={(name, e) => handleDownloadAttachment(name, e)}
                   onViewDescription={(e) => handleViewDescription(activeCard, e)}
@@ -4469,70 +4489,70 @@ const handleSaveBoardDeadline = useCallback(async () => {
               setShowCardModal(false);
               setSelectedCard(null);
             }}
-// In the Board component's onSave handler for new cards
-onSave={async (updates) => {
-  if (selectedCard.card.id === 'temp-new-card') {
-    let googleEventId = '';
-    
-    // Sync to Google Calendar for new cards if due date is set
-    const isGoogleUser = user?.authProvider === 'google';
-    const hasDueDate = !!updates.dueDate;
-    const hasAssignedMembers = (updates.assignedMembers || []).length > 0;
+            // In the Board component's onSave handler for new cards
+            onSave={async (updates) => {
+              if (selectedCard.card.id === 'temp-new-card') {
+                let googleEventId = '';
 
-    if (hasDueDate && (hasAssignedMembers || isGoogleUser)) {
-      try {
-        const targetMembers = [...(updates.assignedMembers || [])];
-        if (isGoogleUser && user?.email && !targetMembers.includes(user.email)) {
-          targetMembers.push(user.email);
-        }
+                // Sync to Google Calendar for new cards if due date is set
+                const isGoogleUser = user?.authProvider === 'google';
+                const hasDueDate = !!updates.dueDate;
+                const hasAssignedMembers = (updates.assignedMembers || []).length > 0;
 
-        const eventId = await addEventToGoogleCalendar({
-          title: updates.title || 'Untitled Card',
-          description: updates.description || '',
-          dueDate: updates.dueDate as string,
-          assignedMembers: targetMembers,
-        });
-        
-        if (eventId) {
-          googleEventId = eventId;
-          toast.success("Task added to Google Calendar ✅");
-        } else {
-          toast.warning("Card created, but failed to sync with Google Calendar.");
-        }
-      } catch (err: any) {
-        console.error("❌ Failed to sync new card to Google Calendar:", err);
-        const errorMsg = typeof err === 'string' ? err : err?.error || err?.message || '';
-        const toastId = `google-sync-cancel-${Date.now()}`;
-        
-        if (errorMsg === 'popup_closed' || errorMsg.includes('popup_closed')) {
-          toast.error("Google sync cancelled. Card created, but not synced to Calendar.", {
-            duration: 6000,
-            id: toastId
-          });
-        } else {
-          toast.warning("Card created, but calendar sync failed.");
-        }
-      }
-    }
+                if (hasDueDate && (hasAssignedMembers || isGoogleUser)) {
+                  try {
+                    const targetMembers = [...(updates.assignedMembers || [])];
+                    if (isGoogleUser && user?.email && !targetMembers.includes(user.email)) {
+                      targetMembers.push(user.email);
+                    }
 
-    const newCard: CardType = {
-      id: `card-${Date.now()}`,
-      title: updates.title || 'Untitled Card',
-      description: updates.description || '',
-      labels: updates.labels || [],
-      assignedMembers: updates.assignedMembers || [],
-      attachments: updates.attachments || [],
-      comments: updates.comments || [],
-      dueDate: updates.dueDate || '',
-      googleEventId: googleEventId,
-    };
-    
-    await addCard(boardId!, selectedCard.listId, newCard);
-    toast.success('Card created');
-  } else {
-    handleUpdateCard(selectedCard.listId, selectedCard.card.id, updates);
-  }
-}}
+                    const eventId = await addEventToGoogleCalendar({
+                      title: updates.title || 'Untitled Card',
+                      description: updates.description || '',
+                      dueDate: updates.dueDate as string,
+                      assignedMembers: targetMembers,
+                    });
+
+                    if (eventId) {
+                      googleEventId = eventId;
+                      toast.success("Task added to Google Calendar ✅");
+                    } else {
+                      toast.warning("Card created, but failed to sync with Google Calendar.");
+                    }
+                  } catch (err: any) {
+                    console.error("❌ Failed to sync new card to Google Calendar:", err);
+                    const errorMsg = typeof err === 'string' ? err : err?.error || err?.message || '';
+                    const toastId = `google-sync-cancel-${Date.now()}`;
+
+                    if (errorMsg === 'popup_closed' || errorMsg.includes('popup_closed')) {
+                      toast.error("Google sync cancelled. Card created, but not synced to Calendar.", {
+                        duration: 6000,
+                        id: toastId
+                      });
+                    } else {
+                      toast.warning("Card created, but calendar sync failed.");
+                    }
+                  }
+                }
+
+                const newCard: CardType = {
+                  id: `card-${Date.now()}`,
+                  title: updates.title || 'Untitled Card',
+                  description: updates.description || '',
+                  labels: updates.labels || [],
+                  assignedMembers: updates.assignedMembers || [],
+                  attachments: updates.attachments || [],
+                  comments: updates.comments || [],
+                  dueDate: updates.dueDate || '',
+                  googleEventId: googleEventId,
+                };
+
+                await addCard(boardId!, selectedCard.listId, newCard);
+                toast.success('Card created');
+              } else {
+                handleUpdateCard(selectedCard.listId, selectedCard.card.id, updates);
+              }
+            }}
             onDelete={() => {
               if (selectedCard.card.id !== 'temp-new-card') {
                 setDeleteConfirm({ type: 'card', id: selectedCard.card.id, listId: selectedCard.listId });
@@ -4545,7 +4565,7 @@ onSave={async (updates) => {
               if (selectedCard.card.id !== 'temp-new-card') {
                 const sourceList = board.lists.find(l => l.id === selectedCard.listId);
                 const cardIndex = sourceList?.cards.findIndex(c => c.id === selectedCard.card.id) || 0;
-                
+
                 moveCard(boardId!, selectedCard.card.id, selectedCard.listId, targetListId, 0);
                 setSelectedCard({ ...selectedCard, listId: targetListId });
               }
@@ -4581,11 +4601,11 @@ onSave={async (updates) => {
             isOpen={!!deleteConfirm}
             onClose={() => setDeleteConfirm(null)}
             onConfirm={
-              deleteConfirm?.type === 'list' 
-                ? handleDeleteList 
-                : deleteConfirm?.type === 'card' 
-                ? handleDeleteCard 
-                : handleRemoveMember
+              deleteConfirm?.type === 'list'
+                ? handleDeleteList
+                : deleteConfirm?.type === 'card'
+                  ? handleDeleteCard
+                  : handleRemoveMember
             }
             title={confirmDialogProps?.title || ''}
             description={confirmDialogProps?.description || ''}

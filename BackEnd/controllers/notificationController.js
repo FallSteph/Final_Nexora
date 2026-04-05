@@ -30,7 +30,8 @@ export const createNotification = async (req, res) => {
             const projectUpdatesEnabled = user.notificationSettings?.projectUpdates !== false;
 
             // If it's a project/board update and user disabled project updates, skip
-            if ((type === 'board_added' || type === 'board_updated' || type === 'card_assigned') && !projectUpdatesEnabled) {
+            const projectTypes = ['board_added', 'board_removed', 'board_updated', 'board_deadline', 'card_assigned', 'card_removed'];
+            if (projectTypes.includes(type) && !projectUpdatesEnabled) {
                 console.log(`ℹ️ Project update emails disabled for user ${userEmail}. Skipping.`);
                 return res.status(201).json(notification);
             }

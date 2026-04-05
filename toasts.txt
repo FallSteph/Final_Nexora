@@ -1,0 +1,264 @@
+CardModal.tsx:40: toast.error('Title is required');
+CardModal.tsx:53: toast.success('✅ Card Updated');
+CardModal.tsx:80: toast.success('Attachment added');
+EditProjectModal.tsx:23: toast.error('Project title is required');
+EditProjectModal.tsx:28: toast.success('✅ Project Updated');
+NetworkStatus.tsx:10: toast.dismiss(offlineToastId);
+NetworkStatus.tsx:13: toast.success("Connection restored", {
+NetworkStatus.tsx:21: offlineToastId = toast.error("Internet connection lost", {
+NetworkStatus.tsx:40: toast.dismiss(offlineToastId);
+ShareBoardModal.tsx:50: toast.error('Email is required');
+ShareBoardModal.tsx:56: toast.error('Member already added');
+ShareBoardModal.tsx:70: toast.success('Member added');
+ShareBoardModal.tsx:82: toast.success('Member removed');
+ShareBoardModal.tsx:97: toast.success('Link copied to clipboard');
+ShareBoardModal.tsx:104: toast.success('✅ Board members updated');
+Sidebar.tsx:175: toast.success('Logged out successfully!');
+toast.tsx:46: Toast.displayName = ToastPrimitives.Root.displayName;
+AppContext.tsx:247: toast.error("No internet connection", {
+AppContext.tsx:279: toast.error("Network error", {
+AuthContext.tsx:156: toast.error(error instanceof Error ? error.message : 'Login failed');
+AuthContext.tsx:213: toast.error('Please log in to update profile');
+AuthContext.tsx:313: toast.success(data.message || 'Profile updated successfully!');
+AuthContext.tsx:327: toast.error(errorMessage);
+AuthContext.tsx:376: toast.success('Password changed successfully!');
+AuthContext.tsx:405: toast.success('Password added successfully! 🔒');
+use-toast.ts:82: toasts: state.toasts.map((t) => (t.id === action.toast.id ? { ...t, ...action.toast } : t)),
+use-toast.ts:94: addToRemoveQueue(toast.id);
+useAutoLogout.ts:22: toast.info('Session expired due to inactivity');
+utils.ts:127: toast.error("No internet connection", {
+Board.tsx:677: toast.success("Card updated successfully");
+Board.tsx:680: toast.error("Failed to save card changes");
+Board.tsx:1134: toast.error('Please enter an email address');
+Board.tsx:1141: toast.error('Please enter a valid email address');
+Board.tsx:1146: toast.error('Member already exists');
+Board.tsx:1161: toast.success('Member added to pending changes');
+Board.tsx:1174: toast.success('Member removed from pending changes');
+Board.tsx:1244: toast.success('Board members updated successfully');
+Board.tsx:1609: toast.dismiss(uploadToastId);
+Board.tsx:1612: toast.info("Upload cancelled. Changes have been saved.");
+Board.tsx:1671: toast.error('Attachment not found');
+Board.tsx:1719: toast.info('Preview may not be available for this file');
+Board.tsx:1749: // toast.success(`${member} has been notified about their assignment`);
+Board.tsx:1786: toast.success(`Deadline synced to Google Calendar for ${memberEmail}`);
+Board.tsx:1793: toast.error(`Google sync cancelled. Deadline for ${memberEmail} saved locally but not synced to Calendar.`, {
+Board.tsx:1798: toast.error(`Failed to sync deadline for ${memberEmail}`);
+Board.tsx:1869: toast.success("Comment posted successfully!");
+Board.tsx:1871: toast.error("Failed to save comment");
+Board.tsx:1876: toast.info("Comment added locally - will be saved when card is created");
+Board.tsx:1881: toast.error(errorMessage);
+Board.tsx:1888: toast.error('Card title is required');
+Board.tsx:1991: toast.success("Assigned members notified about new comments");
+Board.tsx:1999: toast.error('Failed to save card. Please try again.');
+Board.tsx:2007: toast.error("Missing Google API credentials (Client ID).");
+Board.tsx:2025: const toastId = toast.loading("Authenticating with Google...");
+Board.tsx:2028: toast.dismiss(toastId);
+Board.tsx:2031: toast.dismiss(toastId);
+Board.tsx:2033: toast.error("Google authentication failed. Calendar sync will be disabled.");
+Board.tsx:2044: toast.error("Missing Google Client ID");
+Board.tsx:2054: const toastId = toast.loading("Initializing upload...");
+Board.tsx:2074: toast.loading(`Uploading ${totalFiles} file(s) to Google Drive... 0%`, { id: toastId });
+Board.tsx:2120: toast.loading(`Uploading... ${overallProgress}% (${completedCount}/${totalFiles})`, { id: toastId });
+Board.tsx:2127: toast.error(`Failed to upload ${file.name}`);
+Board.tsx:2169: toast.success(`Successfully uploaded ${successfulAttachments.length} file(s) to Google Drive`);
+Board.tsx:2171: toast.info("Files uploaded. Save the card to attach them.");
+Board.tsx:2178: toast.dismiss(toastId);
+Board.tsx:2187: toast.dismiss(toastId);
+Board.tsx:2190: toast.info("Upload cancelled");
+Board.tsx:2193: toast.error(`Upload failed: ${error.message || "Unknown error"}`);
+Board.tsx:2228: toast.success('Attachment removed');
+Board.tsx:2232: toast.error('Failed to remove attachment');
+Board.tsx:2298: toast.success('Card moved to ' + lists.find(l => l.id === selectedListId)?.title);
+Board.tsx:3410: toast.success('✅ Board Saved');
+Board.tsx:3414: toast.error('Failed to save board title');
+Board.tsx:3467: toast.success(`Board deadline added to team members' calendars ✅`);
+Board.tsx:3469: toast.warning("Board saved, but failed to sync with Google Calendar.");
+Board.tsx:3510: toast.error('Google Calendar sync cancelled. Board saved, but not synced to Calendar.', {
+Board.tsx:3515: toast.warning('Board deadline updated but failed to sync to Google Calendar');
+Board.tsx:3523: toast.success("Board deadline removed from Google Calendar 🗑️");
+Board.tsx:3528: toast.success('Board deadline updated');
+Board.tsx:3532: toast.error('Failed to save deadline');
+Board.tsx:3546: toast.success('List added');
+Board.tsx:3549: toast.error('Failed to add list');
+Board.tsx:3566: toast.success('List renamed');
+Board.tsx:3570: toast.error('Failed to rename list');
+Board.tsx:3585: toast.success('List deleted');
+Board.tsx:3590: toast.error('Failed to delete list');
+Board.tsx:3637: toast.success("Task removed from Google Calendar 🗑️");
+Board.tsx:3666: toast.success("Google Calendar event updated ✅");
+Board.tsx:3677: toast.success("Task added to Google Calendar ✅");
+Board.tsx:3679: toast.warning("Card updated, but failed to sync with Google Calendar.");
+Board.tsx:3688: toast.error("Google sync cancelled. Card saved, but not synced to Calendar.", {
+Board.tsx:3693: toast.warning("Card saved, but calendar sync failed.");
+Board.tsx:3704: toast.error("Failed to update card");
+Board.tsx:3723: toast.success('Card deleted');
+Board.tsx:3730: toast.error('Failed to delete card');
+Board.tsx:3745: toast.success('Member removed');
+Board.tsx:3749: toast.error('Failed to remove member');
+Board.tsx:3776: toast.success(`Downloaded ${attachmentName}`);
+Board.tsx:3818: toast.success(`Moved all ${movedCount} cards to ${targetListName}`);
+Board.tsx:3820: toast.success(`Moved ${movedCount} out of ${cardsToMove.length} cards to ${targetListName}`);
+Board.tsx:3853: toast.success(`List moved to position ${newIndex + 1}`);
+Board.tsx:3862: toast.error(`Failed to save: ${errorMessage}`);
+Board.tsx:3876: toast.error('Unable to move card: card not found');
+Board.tsx:3891: toast.error('Unable to move card: target list not found');
+Board.tsx:3912: toast.success(`Card moved to "${targetList?.title}"`);
+Board.tsx:3915: toast.error('Failed to save card movement. Please try again.');
+Board.tsx:3955: toast.error('Board not found');
+Board.tsx:3980: toast.success(`Theme changed to ${theme}`);
+Board.tsx:3983: toast.error('Failed to save theme');
+Board.tsx:4150: toast.success('Due date cleared');
+Board.tsx:4277: toast.success('🎉 Congratulations! Project marked as complete!', {
+Board.tsx:4282: toast.success('Project status updated to ongoing');
+Board.tsx:4286: toast.error('Failed to update status');
+Board.tsx:4498: toast.success("Task added to Google Calendar ✅");
+Board.tsx:4500: toast.warning("Card created, but failed to sync with Google Calendar.");
+Board.tsx:4508: toast.error("Google sync cancelled. Card created, but not synced to Calendar.", {
+Board.tsx:4513: toast.warning("Card created, but calendar sync failed.");
+Board.tsx:4531: toast.success('Card created');
+Dashboard.tsx:105: toast.success("PDF generated successfully!");
+Dashboard.tsx:108: toast.error("Failed to generate PDF");
+Dashboard.tsx:247: toast.error("Failed to load boards");
+Dashboard.tsx:293: if (!newBoardTitle.trim()) return toast.error("Board title is required");
+Dashboard.tsx:305: toast.error(`Board creation limit reached (${limit}).`, {
+Dashboard.tsx:343: toast.success("Board created successfully 🎉");
+Dashboard.tsx:349: toast.error("Error creating board");
+Dashboard.tsx:363: if (!newBoardTitle.trim()) return toast.error("Title is required");
+Dashboard.tsx:390: toast.success('🎉 Congratulations! Project completed!', {
+Dashboard.tsx:395: toast.success("Board updated ✨");
+Dashboard.tsx:402: toast.error("Error updating board");
+Dashboard.tsx:425: toast.success("Board moved to archived projects");
+Dashboard.tsx:427: toast.error("Failed to delete board");
+Dashboard.tsx:463: toast.success("Board restored");
+Dashboard.tsx:465: toast.error("Failed to restore board");
+Dashboard.tsx:484: toast.success("Board permanently deleted 🗑️");
+Dashboard.tsx:486: toast.error("Error deleting board");
+Dashboard.tsx:531: toast.error("Failed to load users");
+ForgotPassword.tsx:41: toast.error("Please continue using Google login 🚀", {
+ForgotPassword.tsx:50: toast.success('Verification code sent to your email!');
+ForgotPassword.tsx:53: toast.error(err.message || 'Failed to send code');
+ForgotPassword.tsx:75: toast.success('Code verified successfully!');
+ForgotPassword.tsx:78: toast.error(err.message || 'Invalid code');
+ForgotPassword.tsx:89: toast.error('Passwords do not match!');
+ForgotPassword.tsx:98: toast.error(
+ForgotPassword.tsx:115: toast.success('Password changed successfully!');
+ForgotPassword.tsx:120: toast.error(err.message || 'Failed to reset password');
+Login.tsx:59: toast.error(
+Login.tsx:71: toast.error(data.message || 'Failed to log in with Google');
+Login.tsx:83: toast.error(
+Login.tsx:106: toast.success('Welcome back! 🚀');
+Login.tsx:109: toast.error(err.message || 'An error occurred');
+Login.tsx:123: toast.error('Please verify reCAPTCHA');
+Login.tsx:141: toast.success('Welcome back!');
+Login.tsx:145: toast.error("Please continue using Google login 🚀", {
+Login.tsx:150: toast.error(err.message || 'Login failed');
+Login.tsx:247: toast.error('reCAPTCHA verification failed. Please try again.');
+Notifications.tsx:49: toast.error('Invalid notification ID');
+Notifications.tsx:56: toast.success('Marked as read');
+Notifications.tsx:60: toast.error('Failed to mark as read');
+Notifications.tsx:67: toast.success('All notifications cleared');
+Notifications.tsx:75: toast.success('All notifications marked as read');
+Notifications.tsx:77: toast.error('Failed to mark all as read');
+Notifications.tsx:85: toast.success('Notification deleted');
+Profile.tsx:115: toast.error("Please fill in all required fields correctly");
+Profile.tsx:126: toast.error("Nothing to update");
+Profile.tsx:175: toast.error("Failed to upload avatar to Google Drive");
+Profile.tsx:185: toast.error("No changes to save");
+Profile.tsx:204: toast.success("Profile updated successfully!");
+Profile.tsx:208: toast.error(err instanceof Error ? err.message : "Failed to update profile");
+Profile.tsx:219: toast.error("Missing Google API credentials (Client ID).");
+Profile.tsx:237: const toastId = toast.loading("Authenticating with Google...");
+Profile.tsx:240: toast.dismiss(toastId);
+Profile.tsx:245: toast.dismiss(toastId);
+Profile.tsx:257: toast.error('Please select a valid image file (JPEG, PNG, GIF, WebP)');
+Profile.tsx:262: toast.error('File size must be less than 5MB');
+Profile.tsx:572: toast.info("Password already added. Please refresh the page to update your settings interface.");
+Profile.tsx:577: toast.error('Passwords do not match');
+Profile.tsx:588: toast.success('Password added successfully! 🔒 Please refresh the page to use full password settings.');
+Profile.tsx:592: toast.success('Password changed successfully! 🔒');
+Profile.tsx:600: toast.error(err.message || "Failed to update password");
+Settings.tsx:75: toast.error("Please log in to save settings");
+Settings.tsx:115: toast.success('Settings saved successfully!');
+Settings.tsx:117: toast.error(error instanceof Error ? error.message : 'An error occurred while saving settings.');
+Settings.tsx:139: toast.error("Please log in to reset settings");
+Settings.tsx:159: toast.success("Notification settings reset to defaults!", {
+Settings.tsx:178: toast.info("Settings reset locally", {
+Settings.tsx:210: toast.info("Testing email notification...");
+Settings.tsx:214: toast.success("Test passed!", {
+Settings.tsx:220: toast.warning("Email notifications are disabled");
+Settings.tsx:226: toast.error("Failed to test notification");
+Settings.tsx:232: toast.info("Testing project update notification...");
+Settings.tsx:236: toast.success("Test passed!", {
+Settings.tsx:242: toast.warning("Project updates are disabled");
+Settings.tsx:248: toast.error("Failed to test project update");
+Settings.tsx:256: toast.info("Email notifications disabled");
+Settings.tsx:258: toast.success("Email notifications enabled");
+Settings.tsx:266: toast.info("Project updates disabled");
+Settings.tsx:268: toast.success("Project updates enabled");
+Signup.tsx:28: toast.error("Please enter a valid email address (e.g., user@example.com).");
+Signup.tsx:37: toast.error(
+Signup.tsx:46: toast.success("Account created successfully! 🎉");
+Signup.tsx:49: toast.error(error.message);
+Signup.tsx:92: toast.success('Account created! 🎉');
+Signup.tsx:96: toast.error(err.message || 'An error occurred');
+Users.tsx:154: toast.error("No internet connection", {
+Users.tsx:163: toast.error("Please log in again");
+Users.tsx:234: toast.error("No internet connection", {
+Users.tsx:238: toast.error(err instanceof Error ? err.message : "Failed to load users");
+Users.tsx:304: toast.success("You now have edit priority for this user!", { duration: 3000, id: `priority-${editingUser.id}` });
+Users.tsx:318: toast.error("⚠️ Your edit session was force-released by another admin. You can no longer save changes.", { duration: 8000 });
+Users.tsx:341: toast.error("Your edit session was closed due to inactivity. Priority has been released.", { duration: 5000 });
+Users.tsx:406: toast.error("Authentication required");
+Users.tsx:424: toast.success("Edit session released. You can now claim priority!");
+Users.tsx:431: toast.error("Failed to release session");
+Users.tsx:534: toast.error("You cannot lock your own account");
+Users.tsx:538: toast.error("You cannot lock other admin accounts");
+Users.tsx:616: toast.success(data.message || successMessage, { id: `lock-${userToLock.id}` });
+Users.tsx:625: toast.error(err.message || 'Failed to lock account');
+Users.tsx:646: toast.success('Account unlocked successfully', { id: `unlock-${userToUnlock.id}` });
+Users.tsx:652: toast.error(error.message || 'Failed to unlock account');
+Users.tsx:655: toast.error('Failed to unlock account');
+Users.tsx:669: toast.info(
+Users.tsx:700: toast.error('Failed to load lock history');
+Users.tsx:706: toast.error('No users selected');
+Users.tsx:725: toast.success(`Locked ${selectedUsers.length} account(s)`);
+Users.tsx:729: toast.error('Failed to lock accounts');
+Users.tsx:735: toast.error('No users selected');
+Users.tsx:753: toast.success(`Unlocked ${selectedUsers.length} account(s)`);
+Users.tsx:757: toast.error('Failed to unlock accounts');
+Users.tsx:788: toast.error("Authentication required");
+Users.tsx:832: toast.error("Failed to start edit session");
+Users.tsx:908: toast.error("All fields are required");
+Users.tsx:914: toast.error("Please enter a valid email address (e.g., user@example.com)");
+Users.tsx:929: toast.error("Please enter a complete valid email address (e.g., user@gmail.com)");
+Users.tsx:935: toast.error("Password is required for new users");
+Users.tsx:941: toast.error(`❌ Save rejected! ${firstEditorName || "Another admin"} has priority.`);
+Users.tsx:951: toast.error("Authentication required");
+Users.tsx:983: toast.error(result.message || "Save rejected due to priority");
+Users.tsx:988: toast.error(result.message || "Record changed by another admin. Refresh and try again.");
+Users.tsx:1013: toast.success("User updated successfully!", { duration: 3000, id: `update-${editingUser.id}` });
+Users.tsx:1036: toast.success("User added successfully!", { id: `add-${normalizedUser.id}` });
+Users.tsx:1043: toast.error(error.message || "Failed to save user");
+Users.tsx:1068: toast.success(`User ${userToDelete.firstName} ${userToDelete.lastName} has been archived`);
+Users.tsx:1072: toast.error(error.message || "Failed to archive user");
+Users.tsx:1098: toast.success(`User ${user.firstName} ${user.lastName} has been restored`);
+Users.tsx:1102: toast.error(error.message || "Failed to unarchive user");
+Users.tsx:1128: toast.success(`Role updated to ${newRole}`);
+Users.tsx:1130: toast.error(err.message || "Failed to update role");
+googleDriveUploader.ts:228: toast.error("Missing Google API credentials.");
+googleDriveUploader.ts:239: toast.error("Google Drive service is currently unavailable.");
+googleDriveUploader.ts:360: toast.error("Missing Google API credentials.");
+googleDriveUploader.ts:368: toast.error(errorMsg);
+googleDriveUploader.ts:378: toast.error("Please log in to upload files.");
+googleDriveUploader.ts:391: toast.error("Google Drive authentication failed.");
+googleDriveUploader.ts:507: toast.error("Error uploading to NexoraUploads.");
+googleDriveUploader.ts:525: toast.error("Missing Google API credentials.");
+googleDriveUploader.ts:533: toast.error(errorMsg);
+googleDriveUploader.ts:543: toast.error("Please log in to upload an avatar.");
+googleDriveUploader.ts:556: toast.error("Google Drive authentication failed.");
+googleDriveUploader.ts:646: toast.error("Error uploading avatar.");
+googleDriveUploader.ts:690: toast.error("Missing Google API credentials.");
+googleDriveUploader.ts:698: toast.error(errorMsg);
+googleDriveUploader.ts:708: toast.error("Please log in to upload files to Google Drive.");
+googleDriveUploader.ts:721: toast.error("Google Drive authentication failed.");
+googleDriveUploader.ts:836: toast.error("Error uploading to Google Drive.");
