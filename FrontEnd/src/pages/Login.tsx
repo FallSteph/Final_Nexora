@@ -4,7 +4,7 @@ import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Mail, Lock, Sparkles, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 import ReCAPTCHA from 'react-google-recaptcha';
 
@@ -168,9 +168,7 @@ const Login = () => {
           
           {/* Logo & Title */}
           <div className="text-center space-y-0.5">
-            <div className="inline-flex items-center justify-center w-9 h-9 rounded-lg gradient-primary mb-1 shadow-md">
-              <Sparkles className="w-4 h-4 text-white" />
-            </div>
+            <img src={`${import.meta.env.BASE_URL}logo.png`} alt="Nexora Logo" className="w-10 h-10 object-contain drop-shadow-md mx-auto mb-1" />
             <h1 className="text-xl font-bold text-gradient">Nexora</h1>
             <p className="text-muted-foreground text-xs sm:text-sm">Sign in to your workspace</p>
           </div>

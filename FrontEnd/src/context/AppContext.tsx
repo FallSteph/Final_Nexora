@@ -108,6 +108,7 @@ interface AppContextType {
     toListId: string,
     newIndex: number
   ) => Promise<void>;
+  normalizeLists: (lists: any[]) => any[];
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -244,9 +245,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     try {
       // Check if offline before starting
       if (!navigator.onLine) {
-        toast.error("No internet connection", {
-          description: "Please check your network and try again."
-        });
         return;
       }
 
@@ -255,7 +253,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         : `${API_URL}/api/boards?userEmail=${email}&includeMembers=true`;
       
       const res = await fetch(url, {
-        headers: getAuthHeaders()
+        headers: getAuthHeaders(),
+        cache: 'no-store'
       });
       
       if (!res.ok) {
@@ -273,13 +272,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       setBoards(normalized);
     } catch (error: any) {
       console.error("Error fetching boards:", error);
-      
-      // Check if it's a network error
-      if (error.name === 'TypeError' && error.message.includes('fetch') || !navigator.onLine) {
-        toast.error("Network error", {
-          description: "Please check your internet connection and try again."
-        });
-      }
     }
   }, [normalizeLists]);
 
@@ -398,27 +390,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
 const reorderLists = async (boardId: string, lists: List[]) => {
-  // Optimistic update - apply immediately for smooth UX
   setBoards((prev) =>
     prev.map((b) => (b.id === boardId || b._id === boardId) ? { ...b, lists } : b)
   );
   
   try {
-    // Extract list IDs - support both _id and id
-    const listOrder = lists.map(list => {
-      console.log('📋 List data:', { 
-        id: list.id, 
-        _id: list._id, 
-        title: list.title 
-      });
-      return list._id || list.id;
-    }).filter(Boolean);
-    
-    console.log('📤 Sending reorder request:', { 
-      boardId, 
-      listOrder,
-      lists: lists.map(l => ({ id: l.id, _id: l._id, title: l.title }))
-    });
+    const listOrder = lists.map(list => list._id || list.id).filter(Boolean);
     
     const res = await fetch(`${API_URL}/api/boards/${boardId}/lists/reorder`, {
       method: 'PUT',
@@ -428,27 +405,16 @@ const reorderLists = async (boardId: string, lists: List[]) => {
     
     if (!res.ok) {
       const errorData = await res.json().catch(() => ({}));
-      console.error('❌ Reorder API error:', errorData);
       throw new Error(errorData.message || 'Failed to save list order');
     }
     
-    // FIX: The backend returns { success: true, board: { lists: [...] } }
-    // where lists only contains card COUNT, not actual cards.
-    // Since our optimistic update already has the correct data with full cards,
-    // we just verify the response was successful and keep our local state.
     const response = await res.json();
     
-    if (response.success) {
-      console.log('✅ List order saved successfully to backend');
-      // Keep the optimistic update - it has the full card data
-      // Don't overwrite with backend response which has truncated card data
-    } else {
-      // If response indicates failure, revert
+    if (!response.success) {
       throw new Error(response.message || 'Backend reported failure');
     }
   } catch (err) {
     console.error("❌ reorderLists error:", err);
-    // Revert on error by refreshing data from server
     refreshData();
     throw err;
   }
@@ -456,10 +422,8 @@ const reorderLists = async (boardId: string, lists: List[]) => {
 
 
   // Card Methods
- // In AppContext.tsx - addCard function
 const addCard = async (boardId: string, listId: string, card: Omit<Card, "id">) => {
   try {
-    // ✅ FIXED: Ensure all fields are properly structured and sent to backend
     const storedUser = JSON.parse(localStorage.getItem("user") || "null");
     const senderName = storedUser?.firstName && storedUser?.lastName
       ? `${storedUser.firstName} ${storedUser.lastName}`
@@ -476,10 +440,8 @@ const addCard = async (boardId: string, listId: string, card: Omit<Card, "id">) 
       googleEventId: (card as any).googleEventId || null,
       memberDeadlines: (card as any).memberDeadlines || {},
       memberEventIds: (card as any).memberEventIds || {},
-      senderName, // ✅ Added for notifications
+      senderName,
     };
-
-    console.log("📤 addCard payload:", JSON.stringify(payload, null, 2));
 
     const res = await fetch(
       `${API_URL}/api/boards/${boardId}/lists/${listId}/cards`,
@@ -498,8 +460,6 @@ const addCard = async (boardId: string, listId: string, card: Omit<Card, "id">) 
     if (userEmail) fetchNotifications(userEmail);
 
     const updatedBoard = await res.json();
-    console.log("📥 addCard response:", updatedBoard);
-    
     const normalizedLists = normalizeLists(updatedBoard.lists);
 
     setBoards(prev =>
@@ -528,7 +488,7 @@ const addCard = async (boardId: string, listId: string, card: Omit<Card, "id">) 
       const payload = {
         ...updates,
         dueDate: updates.dueDate && updates.dueDate !== '' ? new Date(updates.dueDate).toISOString() : updates.dueDate === null ? null : undefined,
-        senderName, // ✅ Added for notifications
+        senderName,
       };
       
       const res = await fetch(
@@ -626,7 +586,6 @@ const addCard = async (boardId: string, listId: string, card: Omit<Card, "id">) 
     try {
       if (!query.trim()) return [];
       
-      // Use fetch instead of axios for consistency
       const res = await fetch(`${API_URL}/api/users/search?q=${encodeURIComponent(query)}`, {
         headers: getAuthHeaders(),
       });
@@ -743,8 +702,6 @@ const addCard = async (boardId: string, listId: string, card: Omit<Card, "id">) 
         await handleFetchError(response);
       }
       
-      const data = await response.json();
-
       setNotifications((prev) => 
         prev.map((notif) => {
           const notifId = String(notif._id || notif.id || '').trim();
@@ -823,14 +780,12 @@ const addCard = async (boardId: string, listId: string, card: Omit<Card, "id">) 
     setLastRefresh(Date.now());
   };
 
-  // Load notifications on mount and auth changes
   useEffect(() => {
     const userEmail = localStorage.getItem("userEmail");
     if (userEmail) {
       fetchNotifications(userEmail);
     }
 
-    // ✅ FIXED: Listen for login/auth changes to fetch notifications immediately
     const handleAuthChange = (e: any) => {
       if (e.detail?.userEmail) {
         fetchNotifications(e.detail.userEmail);
@@ -851,6 +806,7 @@ const addCard = async (boardId: string, listId: string, card: Omit<Card, "id">) 
     markAllNotificationsRead,
     deleteNotification,
     clearAllNotifications,
+    normalizeLists,
     addBoard,
     updateBoard,
     deleteBoard,

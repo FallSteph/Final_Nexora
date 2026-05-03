@@ -605,7 +605,7 @@ export const uploadAvatarToGoogleDrive = async (
           if (xhr.status >= 200 && xhr.status < 300) {
             const uploadedFile = JSON.parse(xhr.responseText);
             
-            // ✅ USE THUMBNAIL URL - THIS WORKS!
+            // ✅ USE THUMBNAIL URL natively provided by Google Drive
             const thumbnailUrl = `https://drive.google.com/thumbnail?id=${uploadedFile.id}&sz=w1000`;
             
             console.log("Avatar uploaded successfully. Thumbnail URL:", thumbnailUrl);

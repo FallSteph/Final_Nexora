@@ -302,6 +302,10 @@ export const createUser = async (req, res) => {
       });
     }
 
+    if (/\d/.test(firstName) || /\d/.test(lastName)) {
+      return res.status(400).json({ message: "First and last name cannot contain numbers" });
+    }
+
     // Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
@@ -386,6 +390,13 @@ export const updateUser = async (req, res) => {
           code: "TIMESTAMP_CONFLICT"
         });
       }
+    }
+
+    if (firstName && /\d/.test(firstName)) {
+      return res.status(400).json({ message: "First name cannot contain numbers" });
+    }
+    if (lastName && /\d/.test(lastName)) {
+      return res.status(400).json({ message: "Last name cannot contain numbers" });
     }
 
     // Use findByIdAndUpdate to avoid validation issues with fields like password

@@ -1745,7 +1745,9 @@ export const addCardComment = async (req, res) => {
       });
     }
 
-    res.status(201).json(board);
+    // Fetch the absolute freshest board from DB to avoid any Mongoose in-memory serialization issues with deep subdocuments
+    const freshBoard = await Board.findById(boardId);
+    res.status(201).json(freshBoard);
   } catch (err) {
     console.error("🔥 Error adding comment:", err);
 

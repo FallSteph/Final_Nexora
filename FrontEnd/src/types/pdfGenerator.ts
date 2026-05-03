@@ -51,7 +51,7 @@ export const generateAnalyticsPDF = async (
   users: { email: string; role?: string }[],
   scope: PdfScope
 ) => {
-  const logoBase64 = await getBase64FromUrl("/logo.png");
+  const logoBase64 = await getBase64FromUrl(`${import.meta.env.BASE_URL}logo.png`);
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();

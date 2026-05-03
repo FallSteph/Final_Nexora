@@ -34,6 +34,7 @@ const SystemSettings = () => {
   
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [resetting, setResetting] = useState(false);
 
   useEffect(() => {
     loadSettings();
@@ -140,6 +141,8 @@ const SystemSettings = () => {
       return;
     }
     
+    setResetting(true);
+    
     try {
       const response = await fetch(`${API_URL}/api/auth/notification-settings/reset`, {
         method: 'POST',
@@ -203,6 +206,8 @@ const SystemSettings = () => {
       localStorage.setItem('app_configuration', JSON.stringify(defaultConfig));
       applyAdminSettings();
     }
+    
+    setResetting(false);
   };
 
   const testEmailNotification = async () => {
@@ -292,35 +297,47 @@ const SystemSettings = () => {
             </p>
           </div>
           
-          <div className="flex gap-3 w-full sm:w-auto">
-            <Button 
-              variant="outline" 
-              size="default"
-              onClick={resetToDefaults}
-              className="glass h-10 text-sm px-6 flex-1 sm:flex-none hover:bg-muted/50 transition-colors rounded-lg"
-            >
-              <RotateCcw className="w-4 h-4 mr-2" />
-              Reset
-            </Button>
-            <Button 
-              onClick={handleSaveSettings}
-              disabled={saving}
-              className="gradient-primary hover-glow h-10 text-sm px-6 flex-1 sm:flex-none transition-all duration-200 rounded-lg"
-              size="default"
-            >
-              {saving ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Save className="w-4 h-4 mr-2" />
-                  Save Changes
-                </>
-              )}
-            </Button>
-          </div>
+          {isAdmin && (
+            <div className="flex gap-3 w-full sm:w-auto">
+              <Button 
+                variant="outline" 
+                size="default"
+                onClick={resetToDefaults}
+                disabled={resetting}
+                className="glass h-10 text-sm px-6 flex-1 sm:flex-none hover:bg-muted/50 transition-colors rounded-lg"
+              >
+                {resetting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Resetting...
+                  </>
+                ) : (
+                  <>
+                    <RotateCcw className="w-4 h-4 mr-2" />
+                    Reset
+                  </>
+                )}
+              </Button>
+              <Button 
+                onClick={handleSaveSettings}
+                disabled={saving}
+                className="gradient-primary hover-glow h-10 text-sm px-6 flex-1 sm:flex-none transition-all duration-200 rounded-lg"
+                size="default"
+              >
+                {saving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4 mr-2" />
+                    Save Changes
+                  </>
+                )}
+              </Button>
+            </div>
+          )}
         </div>
 
         <Card className="glass-strong overflow-hidden border-0 sm:border flex-1 flex flex-col min-h-0">

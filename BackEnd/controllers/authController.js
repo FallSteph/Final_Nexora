@@ -38,6 +38,10 @@ export const signup = async (req, res) => {
       return res.status(400).json({ error: "Missing fields" });
     }
 
+    if (/\d/.test(firstName) || /\d/.test(lastName)) {
+      return res.status(400).json({ error: "First and last name cannot contain numbers" });
+    }
+
     // Standard email regex (more robust)
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     if (!emailRegex.test(email)) {
@@ -660,8 +664,14 @@ export const updateProfile = async (req, res) => {
     }
     
     // Handle other updates (avatar, name, etc.)
-    if (updates.firstName) user.firstName = updates.firstName;
-    if (updates.lastName) user.lastName = updates.lastName;
+    if (updates.firstName) {
+      if (/\d/.test(updates.firstName)) return res.status(400).json({ success: false, message: "First name cannot contain numbers" });
+      user.firstName = updates.firstName;
+    }
+    if (updates.lastName) {
+      if (/\d/.test(updates.lastName)) return res.status(400).json({ success: false, message: "Last name cannot contain numbers" });
+      user.lastName = updates.lastName;
+    }
     if (updates.email) user.email = updates.email;
     if (updates.avatar) user.avatar = updates.avatar;
     

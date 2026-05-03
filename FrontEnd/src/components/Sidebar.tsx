@@ -8,7 +8,6 @@ import {
   Bell, 
   Settings, 
   LogOut, 
-  Sparkles,
   Menu,
   X,
   ChevronRight
@@ -25,6 +24,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from './ui/alert-dialog';
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import { getGoogleDriveImageUrl } from '@/utils/imageUtils';
 
 const Sidebar = () => {
   const { user, logout } = useAuth();
@@ -51,9 +52,7 @@ const Sidebar = () => {
       {/* Logo */}
       <div className="p-4 border-b border-border">
         <div className="flex items-center space-x-2.5">
-          <div className="w-9 h-9 rounded-lg gradient-primary flex items-center justify-center flex-shrink-0 shadow-sm">
-            <Sparkles className="w-5 h-5 text-white" />
-          </div>
+          <img src={`${import.meta.env.BASE_URL}logo.png`} alt="Nexora Logo" className="w-9 h-9 object-contain drop-shadow-md" />
           <div className="flex-1 min-w-0">
             <h1 className="text-lg font-bold text-gradient truncate">Nexora</h1>
             <p className="text-xs text-muted-foreground truncate leading-tight">
@@ -114,27 +113,15 @@ const Sidebar = () => {
             }`
           }
         >
-          <div className="w-9 h-9 rounded-full gradient-secondary flex items-center justify-center text-white font-bold text-sm flex-shrink-0 shadow-sm group-hover:scale-105 transition-transform overflow-hidden">
-            {user?.avatar && typeof user.avatar === "string" ? (
-              <img
-                src={
-                  user.avatar.startsWith("http")
-                    ? user.avatar.includes("drive.google.com")
-                      ? user.avatar.replace("/view?usp=sharing", "").replace(
-                          "file/d/",
-                          "uc?id="
-                        )
-                      : user.avatar
-                    : `${import.meta.env.VITE_API_URL}${user.avatar}`
-                }
-                alt="Profile"
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <span>{user?.firstName?.[0]}{user?.lastName?.[0]}</span>
-            )}
-
-          </div>
+          <Avatar className="w-9 h-9 rounded-full border-2 border-background flex-shrink-0 shadow-sm group-hover:scale-105 transition-transform overflow-hidden">
+            <AvatarImage
+              src={getGoogleDriveImageUrl(user?.avatar as string)}
+              className="object-cover w-full h-full"
+            />
+            <AvatarFallback className="gradient-secondary text-white font-bold text-sm">
+              {user?.firstName?.[0]}{user?.lastName?.[0]}
+            </AvatarFallback>
+          </Avatar>
           
           <div className="flex-1 min-w-0 text-left">
             <p className="text-sm font-medium truncate leading-none group-hover:text-primary transition-colors">

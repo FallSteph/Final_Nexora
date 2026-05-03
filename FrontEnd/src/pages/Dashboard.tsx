@@ -35,7 +35,8 @@ import {
   Activity,
   ArrowDownWideNarrow,
   Clock,
-  ChevronDown
+  ChevronDown,
+  Loader2
 } from "lucide-react";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -50,6 +51,8 @@ import {
 
 type Board = import("@/context/AppContext").Board;
 type SortField = "name" | "creation" | "status" | "due";
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -78,6 +81,9 @@ const Dashboard = () => {
 
   const [newBoardTitle, setNewBoardTitle] = useState("");
   const [newBoardDescription, setNewBoardDescription] = useState("");
+  const [isCreatingBoard, setIsCreatingBoard] = useState(false);
+  const [isUpdatingBoard, setIsUpdatingBoard] = useState(false);
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
   const ITEMS_PER_PAGE = 6;
   // Separate pagination for each section
@@ -93,8 +99,10 @@ const Dashboard = () => {
   const scrollRef = useRef<HTMLDivElement>(null);
 
 const handleGeneratePDF = async () => {
+  if (isGeneratingPDF) return;
+  setIsGeneratingPDF(true);
   try {
-    const res = await fetch(`http://localhost:5000/api/report/analytics?scope=${pdfScope}`, {
+    const res = await fetch(`${API_URL}/api/report/analytics?scope=${pdfScope}`, {
       headers: getAuthHeaders()
     });
     if (!res.ok) throw new Error("Failed to fetch analytics");
@@ -107,6 +115,8 @@ const handleGeneratePDF = async () => {
   } catch (error) {
     toast.error("Failed to generate PDF");
     console.error(error);
+  } finally {
+    setIsGeneratingPDF(false);
   }
 };
 
@@ -222,8 +232,8 @@ const getAuthHeaders = () => {
       try {
         const res = await fetch(
           user.role === "admin"
-            ? "http://localhost:5000/api/boards?deleted=false"
-            : `http://localhost:5000/api/boards?userEmail=${user.email}&includeMembers=true&deleted=false`,
+            ? `${API_URL}/api/boards?deleted=false`
+            : `${API_URL}/api/boards?userEmail=${user.email}&includeMembers=true&deleted=false`,
         {
           headers: getAuthHeaders()  // Add headers here
         }
@@ -257,8 +267,8 @@ const getAuthHeaders = () => {
       try {
         const res = await fetch(
           user.role === "admin"
-            ? "http://localhost:5000/api/boards?deleted=true"
-            : `http://localhost:5000/api/boards?userEmail=${user.email}&includeMembers=true&deleted=true`,
+            ? `${API_URL}/api/boards?deleted=true`
+            : `${API_URL}/api/boards?userEmail=${user.email}&includeMembers=true&deleted=true`,
           {
             headers: getAuthHeaders()
           }
@@ -291,6 +301,9 @@ const getAuthHeaders = () => {
   // Create board
   const handleCreateBoard = async () => {
     if (!newBoardTitle.trim()) return toast.error("Board title is required");
+    if (isCreatingBoard) return;
+    
+    setIsCreatingBoard(true);
 
     // Check Board Creation Limit for non-admins
     if (user?.role !== 'admin') {
@@ -305,6 +318,7 @@ const getAuthHeaders = () => {
           toast.error(`Board creation limit reached (${limit}).`, {
             description: "Please contact an admin to increase your limit or delete old boards."
           });
+          setIsCreatingBoard(false);
           return;
         }
       } catch (e) {
@@ -313,7 +327,7 @@ const getAuthHeaders = () => {
     }
 
     try {
-      const res = await fetch("http://localhost:5000/api/boards", {
+      const res = await fetch(`${API_URL}/api/boards`, {
         method: "POST",
         headers: getAuthHeaders(),
         body: JSON.stringify({
@@ -347,6 +361,8 @@ const getAuthHeaders = () => {
       navigate(`/board/${data._id}`);
     } catch {
       toast.error("Error creating board");
+    } finally {
+      setIsCreatingBoard(false);
     }
   };
 
@@ -361,11 +377,13 @@ const getAuthHeaders = () => {
   const handleUpdateBoard = async () => {
   if (!editingBoard) return;
   if (!newBoardTitle.trim()) return toast.error("Title is required");
+  if (isUpdatingBoard) return;
 
+  setIsUpdatingBoard(true);
   try {
     const newStatus = editingBoard.status || 'ongoing';
     
-    const res = await fetch(`http://localhost:5000/api/boards/${editingBoard.id}`, {
+    const res = await fetch(`${API_URL}/api/boards/${editingBoard.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -400,6 +418,8 @@ const getAuthHeaders = () => {
   } catch (err) {
     console.error("Error updating board:", err);
     toast.error("Error updating board");
+  } finally {
+    setIsUpdatingBoard(false);
   }
 };
 
@@ -411,7 +431,7 @@ const getAuthHeaders = () => {
   const handleDeleteBoard = async () => {
     if (!boardToDelete) return;
     try {
-      const res = await fetch(`http://localhost:5000/api/boards/${boardToDelete}`, {
+      const res = await fetch(`${API_URL}/api/boards/${boardToDelete}`, {
         method: "DELETE",
       });
       if (!res.ok) throw new Error("Failed to delete board");
@@ -433,7 +453,7 @@ const getAuthHeaders = () => {
 
   const handleRestoreBoard = async (board: Board) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/boards/${board.id}`, {
+      const res = await fetch(`${API_URL}/api/boards/${board.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ deleted: false, deletedAt: null }),
@@ -476,7 +496,7 @@ const getAuthHeaders = () => {
     if (!boardToPermanentDelete) return;
 
     try {
-      const res = await fetch(`http://localhost:5000/api/boards/permanent/${boardToPermanentDelete}`, {
+      const res = await fetch(`${API_URL}/api/boards/permanent/${boardToPermanentDelete}`, {
         method: "DELETE",
       });
       if (!res.ok) throw new Error("Failed to permanently delete board");
@@ -518,7 +538,7 @@ const getAuthHeaders = () => {
   useEffect(() => {
     const loadUsers = async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/users", {
+        const res = await fetch(`${API_URL}/api/users`, {
           headers: getAuthHeaders()
         });
         if (!res.ok) throw new Error("Failed to load users");
@@ -769,7 +789,7 @@ const getAuthHeaders = () => {
           <>
             <div 
               key={currentPage}
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 animate-in fade-in slide-in-from-right-8 duration-500 ease-out"
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3"
             >
               {paginatedBoards.map((board) => (
                 <BoardCard key={board.id} board={board} />
@@ -887,10 +907,11 @@ const getAuthHeaders = () => {
                 </Button>
                 <Button
                   onClick={handleCreateBoard}
+                  disabled={isCreatingBoard}
                   className="gradient-primary hover-glow w-full sm:w-auto h-8 text-xs"
                   size="sm"
                 >
-                  Create Board
+                  {isCreatingBoard ? "Creating..." : "Create Board"}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -1194,10 +1215,16 @@ const getAuthHeaders = () => {
             </Button>
             <Button
               onClick={handleUpdateBoard}
+              disabled={isUpdatingBoard}
               className="gradient-primary hover-glow w-full sm:w-auto h-8 text-xs"
               size="sm"
             >
-              Update Board
+              {isUpdatingBoard ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                  Updating...
+                </>
+              ) : "Update Board"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1372,10 +1399,16 @@ const getAuthHeaders = () => {
             </Button>
             <Button
               onClick={handleGeneratePDF}
+              disabled={isGeneratingPDF}
               className="gradient-primary hover-glow w-full sm:w-auto h-8 text-xs"
               size="sm"
             >
-              Generate PDF
+              {isGeneratingPDF ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                  Generating...
+                </>
+              ) : "Generate PDF"}
             </Button>
           </DialogFooter>
         </DialogContent>

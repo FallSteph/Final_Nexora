@@ -14,7 +14,7 @@ import {
   Settings, Filter, Users, Download, Eye, FileText, Menu,
   Calendar, Tag, CheckCircle, Clock, Palette, Move, CalendarIcon, ExternalLink,
   Image, File, FileImage,
-  WifiOff, RotateCcw
+  WifiOff, RotateCcw, Loader2
 } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
@@ -97,6 +97,7 @@ const Board = () => {
   const { user } = useAuth();
   const {
     boards,
+    setBoards,
     updateBoard,
     addList,
     updateList,
@@ -109,6 +110,7 @@ const Board = () => {
     updateBoardMembers,
     fetchBoards,
     fetchNotifications,
+    normalizeLists,
   } = useApp();
   const initialAttachmentsLoadedRef = useRef(false);
   // Derived permission flags
@@ -116,6 +118,7 @@ const Board = () => {
   const isInstructor = user?.role === 'instructor';
   const { isLoading: isAuthLoading } = useAuth();
   const [isDataLoading, setIsDataLoading] = useState(true);
+  const [isSubmittingList, setIsSubmittingList] = useState(false);
 
   // FIXED: Loading timeout to prevent infinite loading
   useEffect(() => {
@@ -411,7 +414,7 @@ const Board = () => {
       }
     }
 
-    .animate-slide-in {
+    . {
       animation: slideIn 0.2s ease-out;
     }
 
@@ -1047,6 +1050,7 @@ const Board = () => {
     const [pendingMembers, setPendingMembers] = useState<{ email: string; role: 'member' | 'manager' | 'instructor' }[]>(board.members as { email: string; role: 'member' | 'manager' | 'instructor' }[]);
     const [pendingChanges, setPendingChanges] = useState(false);
     const [memberToRemove, setMemberToRemove] = useState<{ email: string; role: 'member' | 'manager' | 'instructor' } | null>(null);
+    const [isSavingMembers, setIsSavingMembers] = useState(false);
 
     // User autocomplete state
     const [allUsers, setAllUsers] = useState<Array<{ email: string; firstName: string; lastName: string }>>([]);
@@ -1179,76 +1183,86 @@ const Board = () => {
     };
 
     const handleSaveChanges = async () => {
-      // Find newly added members
-      const originalMemberEmails = board.members.map((m: any) => m.email);
+      if (isSavingMembers) return;
+      setIsSavingMembers(true);
+      
+      try {
+        // Find newly added members
+        const originalMemberEmails = board.members.map((m: any) => m.email);
 
-      // Ensure PM is considered an original member so they don't get notified
-      const pmEmail = (board as any).userEmail;
-      if (pmEmail && !originalMemberEmails.includes(pmEmail)) {
-        originalMemberEmails.push(pmEmail);
-      }
+        // Ensure PM is considered an original member so they don't get notified
+        const pmEmail = (board as any).userEmail;
+        if (pmEmail && !originalMemberEmails.includes(pmEmail)) {
+          originalMemberEmails.push(pmEmail);
+        }
 
-      const newlyAddedMembers = pendingMembers.filter(
-        member => !originalMemberEmails.includes(member.email)
-      );
-
-      // Find removed members
-      const removedMembers = originalMemberEmails.filter(
-        email => !pendingMembers.some(m => m.email === email) && email !== pmEmail
-      );
-
-      const senderFullName = user?.firstName ? `${user.firstName} ${user.lastName}` : 'Board Admin';
-
-      // Send notifications to newly added members
-      for (const member of newlyAddedMembers) {
-        // Don't notify the person making the change
-        if (user?.email && member.email === user.email) continue;
-
-        await sendNotification(
-          member.email,
-          'board_added',
-          {
-            boardTitle: board.title,
-            boardId: board.id,
-            senderName: senderFullName
-          }
+        const newlyAddedMembers = pendingMembers.filter(
+          member => !originalMemberEmails.includes(member.email)
         );
-      }
 
-      // Send notifications to removed members
-      for (const memberEmail of removedMembers) {
-        // Don't notify the person making the change (if they removed themselves)
-        if (user?.email && memberEmail === user.email) continue;
-
-        await sendNotification(
-          memberEmail,
-          'board_removed',
-          {
-            boardTitle: board.title,
-            boardId: board.id,
-            senderName: senderFullName,
-            message: `You have been removed from the board "${board.title}" by ${senderFullName}.`
-          }
+        // Find removed members
+        const removedMembers = originalMemberEmails.filter(
+          email => !pendingMembers.some(m => m.email === email) && email !== pmEmail
         );
-      }
 
-      // Log activity
-      if (newlyAddedMembers.length > 0 || removedMembers.length > 0) {
-        await logActivity(board.id, 'members_updated', {
-          addedMembers: newlyAddedMembers.map(m => m.email),
-          removedMembers: removedMembers,
-          totalMembers: pendingMembers.length
-        });
-      }
+        const senderFullName = user?.firstName ? `${user.firstName} ${user.lastName}` : 'Board Admin';
 
-      onUpdateMembers(pendingMembers);
-      setPendingChanges(false);
-      if (removedMembers.length > 0) {
-        toast.success('Board members updated and removed members notified');
-      } else {
-        toast.success('Board members updated successfully');
+        // Send notifications to newly added members
+        for (const member of newlyAddedMembers) {
+          // Don't notify the person making the change
+          if (user?.email && member.email === user.email) continue;
+
+          await sendNotification(
+            member.email,
+            'board_added',
+            {
+              boardTitle: board.title,
+              boardId: board.id,
+              senderName: senderFullName
+            }
+          );
+        }
+
+        // Send notifications to removed members
+        for (const memberEmail of removedMembers) {
+          // Don't notify the person making the change (if they removed themselves)
+          if (user?.email && memberEmail === user.email) continue;
+
+          await sendNotification(
+            memberEmail,
+            'board_removed',
+            {
+              boardTitle: board.title,
+              boardId: board.id,
+              senderName: senderFullName,
+              message: `You have been removed from the board "${board.title}" by ${senderFullName}.`
+            }
+          );
+        }
+
+        // Log activity
+        if (newlyAddedMembers.length > 0 || removedMembers.length > 0) {
+          await logActivity(board.id, 'members_updated', {
+            addedMembers: newlyAddedMembers.map(m => m.email),
+            removedMembers: removedMembers,
+            totalMembers: pendingMembers.length
+          });
+        }
+
+        await onUpdateMembers(pendingMembers);
+        setPendingChanges(false);
+        if (removedMembers.length > 0) {
+          toast.success('Board members updated and removed members notified');
+        } else {
+          toast.success('Board members updated successfully');
+        }
+        onClose();
+      } catch (error) {
+        console.error('Failed to save members:', error);
+        toast.error('Failed to save members. Please try again.');
+      } finally {
+        setIsSavingMembers(false);
       }
-      onClose();
     };
 
     const handleClose = () => {
@@ -1440,9 +1454,14 @@ const Board = () => {
               <Button
                 onClick={handleSaveChanges}
                 className="gradient-primary hover-glow flex-1 h-9 text-sm"
-                disabled={!pendingChanges}
+                disabled={!pendingChanges || isSavingMembers}
               >
-                Save Changes
+                {isSavingMembers ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                    Saving...
+                  </>
+                ) : "Save Changes"}
               </Button>
             </div>
           </div>
@@ -1491,6 +1510,7 @@ const Board = () => {
     onMoveCard,
     board
   }: EnhancedCardModalProps) => {
+    const [isSavingCard, setIsSavingCard] = useState(false);
     const [title, setTitle] = useState(card.title);
     const [description, setDescription] = useState(card.description || '');
     const [labels, setLabels] = useState(card.labels);
@@ -1852,6 +1872,20 @@ const Board = () => {
 
           // FIXED: Backend returns board object with status 201, not {success: true}
           if (response.status === 201 || response.status === 200) {
+            // Update the global state with the fresh board from the backend response immediately
+            // This ensures the comment is saved in context and persists when the modal is closed and reopened
+            const boardData = response.data as any;
+            if (boardData && boardData._id) {
+              setBoards(prevBoards => prevBoards.map(b => {
+                if (b.id !== boardId && b._id !== boardId) return b;
+                return {
+                  ...boardData,
+                  id: boardData._id || boardData.id,
+                  lists: normalizeLists(boardData.lists)
+                };
+              }));
+            }
+
             // Notify assigned members
             for (const member of assignedMembers) {
               if (member !== currentUserEmail) {
@@ -1891,6 +1925,9 @@ const Board = () => {
         toast.error('Card title is required');
         return;
       }
+      
+      if (isSavingCard) return;
+      setIsSavingCard(true);
 
       try {
         // Find removed members for notification
@@ -2009,6 +2046,8 @@ const Board = () => {
       } catch (error) {
         console.error('Failed to save card:', error);
         toast.error('Failed to save card. Please try again.');
+      } finally {
+        setIsSavingCard(false);
       }
     };
 
@@ -2221,13 +2260,13 @@ const Board = () => {
         if (card.id !== 'temp-new-card' && board?.id) {
           const token = localStorage.getItem('token');
           await axios.delete(
-            `http://localhost:5000/api/boards/${board.id}/cards/${card.id}/attachments/${attachmentToRemove.name}`,
+            `${API_URL}/api/boards/${board.id}/cards/${card.id}/attachments/${attachmentToRemove.name}`,
             { headers: { Authorization: `Bearer ${token}` } }
           );
 
           // Update card's attachments list
           await axios.put(
-            `http://localhost:5000/api/boards/${board.id}/cards/${card.id}`,
+            `${API_URL}/api/boards/${board.id}/cards/${card.id}`,
             { attachments: attachments.filter(a => a.id !== attachmentId).map(att => att.name) },
             { headers: { Authorization: `Bearer ${token}` } }
           );
@@ -2650,17 +2689,22 @@ const Board = () => {
               <Button
                 onClick={handleSave}
                 className="gradient-primary px-4 py-1.5 hover-glow text-xs compact-button relative"
-                disabled={isUploading}
+                disabled={isUploading || isSavingCard}
               >
                 {isUploading ? (
                   <>
-                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1.5"></div>
+                    <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
                     Uploading...
+                  </>
+                ) : isSavingCard ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                    {card.id === 'temp-new-card' ? 'Creating...' : 'Saving...'}
                   </>
                 ) : (
                   <>
                     {card.id === 'temp-new-card' ? 'Create Card' : 'Save Changes'}
-                    {attachments.length > 0 && !isUploading && (
+                    {attachments.length > 0 && (
                       <span className="ml-1.5 bg-white/20 rounded-full px-1.5 py-0.5 text-[10px]">
                         {attachments.length} file{attachments.length > 1 ? 's' : ''}
                       </span>
@@ -3087,7 +3131,7 @@ const Board = () => {
 
                       {/* Move All Options */}
                       {showMoveAllOptions && (
-                        <div className="ml-6 mt-1 space-y-1 animate-slide-in">
+                        <div className="ml-6 mt-1 space-y-1 ">
                           <div className="text-[10px] font-semibold text-blue-400 uppercase tracking-wide px-2">
                             Move to:
                           </div>
@@ -3180,7 +3224,7 @@ const Board = () => {
 
   // Mobile Menu Component
   const MobileMenu = ({ onShare, onAddList, isAddingList }: MobileMenuProps) => (
-    <div className="md:hidden fixed bottom-6 right-6 z-40 animate-slide-in">
+    <div className="md:hidden fixed bottom-6 right-6 z-40 ">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button className="h-12 w-12 rounded-full gradient-primary hover-glow shadow-lg smooth-transition">
@@ -3543,6 +3587,9 @@ const Board = () => {
 
   const handleAddList = useCallback(async () => {
     if (!boardId || !newListTitle.trim() || !board) return;
+    if (isSubmittingList) return;
+    
+    setIsSubmittingList(true);
 
     try {
       await addList(boardId, newListTitle.trim());
@@ -3555,8 +3602,10 @@ const Board = () => {
     } catch (error) {
       console.error('Error adding list:', error);
       toast.error('Failed to add list');
+    } finally {
+      setIsSubmittingList(false);
     }
-  }, [boardId, newListTitle, addList, board]);
+  }, [boardId, newListTitle, addList, board, isSubmittingList]);
 
   const handleRenameList = useCallback(async (listId: string) => {
     if (!boardId || !editingListTitle.trim() || !board) return;
@@ -4031,7 +4080,7 @@ const Board = () => {
     const isOffline = !navigator.onLine;
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 mobile-safe-padding">
-        <div className="text-center glass-strong rounded-xl p-6 max-w-md w-full mx-4 animate-slide-in">
+        <div className="text-center glass-strong rounded-xl p-6 max-w-md w-full mx-4 ">
           <div className="flex justify-center mb-4">
             {isOffline ? (
               <WifiOff className="w-12 h-12 text-destructive animate-pulse" />
@@ -4385,7 +4434,7 @@ const Board = () => {
                 {/* Add List Column */}
                 <div className={`flex-shrink-0 ${isMobile ? 'w-64' : 'w-72'} h-full flex flex-col`}>
                   {isAddingList ? (
-                    <div className="glass-strong rounded-xl p-3 h-fit animate-slide-in compact-list">
+                    <div className="glass-strong rounded-xl p-3 h-fit compact-list">
                       <Input
                         value={newListTitle}
                         onChange={(e) => setNewListTitle(e.target.value)}
@@ -4405,10 +4454,19 @@ const Board = () => {
                           onClick={handleAddList}
                           size="sm"
                           className="gradient-primary h-8 flex-1 smooth-transition hover:scale-105 text-xs compact-button"
-                          disabled={!newListTitle.trim()} // Disabled when empty
+                          disabled={!newListTitle.trim() || isSubmittingList} // Disabled when empty or submitting
                         >
-                          <CheckCircle className="w-3.5 h-3.5 mr-1.5" />
-                          Add List
+                          {isSubmittingList ? (
+                            <>
+                              <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                              Adding...
+                            </>
+                          ) : (
+                            <>
+                              <CheckCircle className="w-3.5 h-3.5 mr-1.5" />
+                              Add List
+                            </>
+                          )}
                         </Button>
                         <Button
                           onClick={() => {
@@ -4488,6 +4546,11 @@ const Board = () => {
             onClose={() => {
               setShowCardModal(false);
               setSelectedCard(null);
+              // Force a fresh sync from the database whenever the modal closes
+              // This guarantees the user sees their changes when they reopen any card
+              if (user?.email) {
+                fetchBoards(user.email, user.role);
+              }
             }}
             // In the Board component's onSave handler for new cards
             onSave={async (updates) => {

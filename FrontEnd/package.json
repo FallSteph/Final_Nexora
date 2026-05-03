@@ -1,5 +1,6 @@
 {
   "name": "vite_react_shadcn_ts",
+  "homepage": "/julius_2026",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -58,6 +59,7 @@
     "dotenv": "^17.2.3",
     "embla-carousel-react": "^8.6.0",
     "express": "^5.2.1",
+    "http-proxy-middleware": "^3.0.3",
     "gapi-script": "^1.2.0",
     "input-otp": "^1.4.2",
     "jsbarcode": "^3.12.1",

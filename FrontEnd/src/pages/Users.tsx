@@ -42,7 +42,8 @@ import {
   History,
   Filter,
   AlertCircle,
-  RotateCcw
+  RotateCcw,
+  Loader2
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -78,6 +79,7 @@ const Users = () => {
   const [closedDueToInactivity, setClosedDueToInactivity] = useState(false);
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
   const [customLockHours, setCustomLockHours] = useState<string>('');
+  const [isSavingUser, setIsSavingUser] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -909,6 +911,11 @@ const Users = () => {
       return;
     }
 
+    if (/\d/.test(formData.firstName) || /\d/.test(formData.lastName)) {
+      toast.error("First and last name cannot contain numbers.");
+      return;
+    }
+
      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(formData.email)) {
     toast.error("Please enter a valid email address (e.g., user@example.com)");
@@ -942,6 +949,9 @@ const Users = () => {
       handleCloseDialog();
       return;
     }
+
+    if (isSavingUser) return;
+    setIsSavingUser(true);
 
     try {
       const url = `${API_URL}/api/users`;
@@ -1041,6 +1051,8 @@ const Users = () => {
     } catch (error: any) {
       console.error("Error saving user:", error);
       toast.error(error.message || "Failed to save user");
+    } finally {
+      setIsSavingUser(false);
     }
   };
 
@@ -1363,10 +1375,18 @@ const Users = () => {
               </Button>
               <Button 
                 onClick={handleSaveUser} 
+                disabled={isSavingUser}
                 className="gradient-primary hover-glow w-full sm:w-auto order-1 sm:order-2 text-xs sm:text-sm h-8 sm:h-9"
                 size="sm"
               >
-                {editingUser ? 'Update' : 'Create'} User
+                {isSavingUser ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>{editingUser ? 'Update' : 'Create'} User</>
+                )}
               </Button>
             </DialogFooter>
           </DialogContent>

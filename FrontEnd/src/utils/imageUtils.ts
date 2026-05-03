@@ -6,20 +6,11 @@ export const getGoogleDriveImageUrl = (url: string): string => {
     return url;
   }
   
-  // If it's already a thumbnail URL, ensure it has a good size
-  if (url.includes('drive.google.com/thumbnail')) {
-    if (!url.includes('sz=')) {
-      return `${url}&sz=w1000`;
-    }
-    return url;
-  }
-  
-  // If it's a regular Google Drive URL, convert to thumbnail
   if (url.includes('drive.google.com')) {
     const fileIdMatch = url.match(/[-\w]{25,}/);
     if (fileIdMatch) {
       const fileId = fileIdMatch[0];
-      // Use thumbnail with good quality (w1000 = width 1000px)
+      // Revert to thumbnail?id= as uc?export=view triggers Content-Disposition: attachment downloads on images
       return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
     }
   }

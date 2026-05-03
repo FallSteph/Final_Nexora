@@ -6,7 +6,7 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { User, Mail, Lock, Upload, X, Save, UserCircle, Shield, Plus, Key, Eye, EyeOff } from 'lucide-react';
+import { User, Mail, Lock, Upload, X, Save, UserCircle, Shield, Plus, Key, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { uploadAvatarToGoogleDrive } from "@/types/googleDriveUploader";
 type SettingsTab = 'profile' | 'password';
@@ -25,6 +25,7 @@ const ProfileSettings = () => {
   const [previewAvatar, setPreviewAvatar] = useState<string | null>(null);
   const [selectedAvatarFile, setSelectedAvatarFile] = useState<File | null>(null);
   const [errors, setErrors] = useState<{firstName?: string; lastName?: string; email?: string}>({});
+  const [isSaving, setIsSaving] = useState(false);
   
   const hasChanges = firstName !== user?.firstName || 
                   lastName !== user?.lastName || 
@@ -39,51 +40,8 @@ const ProfileSettings = () => {
     }
   }, [user?.avatar]);
 
-  // Fix Google Drive URLs for display using thumbnails
-  const getFixedAvatarUrl = (url: string | null | undefined): string => {
-    if (!url) return '';
-    
-    console.log('Original avatar URL:', url);
-    
-    // If it's already a thumbnail URL, use it directly
-    if (url.includes('drive.google.com/thumbnail')) {
-      console.log('Using existing thumbnail URL');
-      return url;
-    }
-    
-    // If it's a regular Google Drive URL, convert to thumbnail
-    if (url.includes('drive.google.com')) {
-      const fileIdMatch = url.match(/[-\w]{25,}/);
-      if (fileIdMatch) {
-        const fileId = fileIdMatch[0];
-        const thumbnailUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
-        console.log('Converted to thumbnail URL:', thumbnailUrl);
-        return thumbnailUrl;
-      }
-    }
-    
-    console.log('Using direct URL (not Google Drive):', url);
-    return url;
-  };
-
-  // Test if image loads
-  const testImageLoad = (url: string) => {
-    const img = new Image();
-    img.onload = () => console.log('✅ Test: Image loads successfully');
-    img.onerror = () => console.log('❌ Test: Image failed to load');
-    img.src = url;
-  };
-
   // Get the current avatar URL for display
-  const currentAvatarUrl = getFixedAvatarUrl(previewAvatar || user?.avatar);
-
-  // Test the URL when it changes
-  useEffect(() => {
-    if (currentAvatarUrl) {
-      console.log('Testing image URL:', currentAvatarUrl);
-      testImageLoad(currentAvatarUrl);
-    }
-  }, [currentAvatarUrl]);
+  const currentAvatarUrl = getGoogleDriveImageUrl(previewAvatar || (user?.avatar as string));
 
   // Validate form fields
   const validateForm = () => {
@@ -91,10 +49,16 @@ const ProfileSettings = () => {
     
     if (!firstName.trim()) {
       newErrors.firstName = 'First name is required';
+    } else if (/\d/.test(firstName)) {
+      newErrors.firstName = 'First name cannot contain numbers';
+      toast.error('First name cannot contain numbers');
     }
     
     if (!lastName.trim()) {
       newErrors.lastName = 'Last name is required';
+    } else if (/\d/.test(lastName)) {
+      newErrors.lastName = 'Last name cannot contain numbers';
+      toast.error('Last name cannot contain numbers');
     }
     
     if (user?.authProvider === 'local') {
@@ -126,6 +90,9 @@ const ProfileSettings = () => {
       toast.error("Nothing to update");
       return;
     }
+
+    if (isSaving) return;
+    setIsSaving(true);
 
     try {
       // Only set uploading state if we're actually uploading an avatar
@@ -207,9 +174,10 @@ const ProfileSettings = () => {
       console.error("Profile update error:", err);
       toast.error(err instanceof Error ? err.message : "Failed to update profile");
     } finally {
-      // Only reset uploading states if they were set
+      // Only reset uploading states if他们 were set
       setIsUploading(false);
       setUploadProgress(0);
+      setIsSaving(false);
     }
   };
 
@@ -302,22 +270,8 @@ const ProfileSettings = () => {
       <div className="flex items-center justify-center sm:justify-start gap-6 p-6 glass rounded-xl border border-border/50">
         <Avatar className="w-20 h-20 sm:w-24 sm:h-24 border-2 border-border flex-shrink-0 shadow-lg">
           <AvatarImage
-            src={getFixedAvatarUrl(previewAvatar || user?.avatar)}
+            src={currentAvatarUrl}
             className="object-cover"
-            onError={(e) => {
-              console.log('Avatar image failed to load:', e.currentTarget.src);
-              // Try alternative format if it's a Google Drive URL
-              const currentSrc = e.currentTarget.src;
-              if (currentSrc.includes('drive.google.com')) {
-                const fileIdMatch = currentSrc.match(/[-\w]{25,}/);
-                if (fileIdMatch) {
-                  const fileId = fileIdMatch[0];
-                  // Try thumbnail format
-                  e.currentTarget.src = `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
-                }
-              }
-            }}
-            onLoad={() => console.log('Avatar image loaded successfully')}
           />
           <AvatarFallback className="text-2xl gradient-primary text-white">
             {user?.firstName?.[0]}{user?.lastName?.[0]}
@@ -456,7 +410,7 @@ const ProfileSettings = () => {
           onClick={handleProfileUpdate}
           size="lg"
           className="gradient-primary hover-glow h-12 text-sm sm:text-base px-10 w-full sm:w-auto rounded-xl transition-all shadow-lg"
-          disabled={isUploading || (!hasChanges && !selectedAvatarFile) || 
+          disabled={isUploading || isSaving || (!hasChanges && !selectedAvatarFile) || 
                    !firstName.trim() || !lastName.trim() || 
                    (user?.authProvider === 'local' && (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)))}
         >
@@ -464,6 +418,11 @@ const ProfileSettings = () => {
             <>
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2.5"></div>
               Uploading... {uploadProgress}%
+            </>
+          ) : isSaving ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2.5 animate-spin" />
+              Saving...
             </>
           ) : (
             <>
@@ -770,7 +729,10 @@ const PasswordSettings = () => {
           }
         >
           {isLoading ? (
-            'Processing Security Update...'
+            <>
+              <Loader2 className="w-4 h-4 mr-2.5 animate-spin" />
+              Processing...
+            </>
           ) : isGoogleAuthWithoutPassword ? (
             <>
               <Plus className="w-4 h-4 mr-2.5" />
